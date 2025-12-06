@@ -1,0 +1,148 @@
+# MLFQ Scheduler - Multilevel Feedback Queue Implementation
+
+A comprehensive implementation of the Multilevel Feedback Queue (MLFQ) scheduling algorithm with multiple visualization interfaces and educational features.
+
+![MLFQ Scheduler Demo](https://img.shields.io/badge/Status-Complete-brightgreen)
+![C++](https://img.shields.io/badge/C++-17-blue)
+![Web](https://img.shields.io/badge/Web-HTML5%2FJS-orange)
+![License](https://img.shields.io/badge/License-MIT-green)
+
+## 🚀 Quick Start
+
+```bash
+# Clone the repository
+git clone https://github.com/Ayyankhan101/MLFQ-Scheduling.git
+cd MLFQ-Scheduling
+
+# Build and run
+./build_web.sh
+cd build && ./mlfq_scheduler
+
+# Choose option 5 for Web GUI, then open http://localhost:8080
+```
+
+## ✨ Features
+
+- **🎯 Multiple Interfaces**: Terminal, Web GUI, and FLTK GUI
+- **⚡ Real-time Visualization**: Watch processes move between queues
+- **📊 Performance Metrics**: Accurate wait time, turnaround time, CPU utilization
+- **🔄 Algorithm Comparison**: Compare Round Robin, SJF, and Priority Scheduling
+- **🎛️ Configurable Parameters**: Adjust quantum times, boost intervals, queue counts
+- **📈 Educational Tools**: Step-by-step execution and detailed explanations
+
+## 🖥️ Screenshots
+
+### Web Interface
+Beautiful, interactive visualization that runs in any modern browser.
+
+### Terminal Interface  
+Step-by-step execution perfect for understanding the algorithm.
+
+## 🏗️ Architecture
+
+```
+├── src/           # Core C++ implementation
+├── include/       # Header files  
+├── web_gui/       # Web interface (HTML/CSS/JS)
+├── docs/          # Comprehensive documentation
+├── tests/         # Unit tests
+└── build/         # Compiled binaries
+```
+
+## 🎓 Educational Value
+
+This project was built to help students understand MLFQ scheduling through:
+
+- **Visual Learning**: See exactly how processes move between priority queues
+- **Interactive Experimentation**: Change parameters and see immediate effects  
+- **Algorithm Comparison**: Understand trade-offs between different approaches
+- **Real Metrics**: Learn how performance is measured in operating systems
+
+## 🔧 Technical Details
+
+### Core Algorithm Features
+- ✅ Multiple priority queues with exponential quantum progression
+- ✅ Round-robin scheduling within each queue
+- ✅ Priority boost (aging) to prevent starvation
+- ✅ Configurable last-queue algorithms (RR/SJF/Priority)
+- ✅ Accurate performance metric calculations
+
+### Supported Platforms
+- **Linux** (primary development platform)
+- **macOS** (tested and working)
+- **Windows** (should work with minor modifications)
+- **Web browsers** (Chrome, Firefox, Safari, Edge)
+
+## 📚 Documentation
+
+- **[Quick Start Guide](docs/QUICKSTART.md)** - Get running in 5 minutes
+- **[Project Summary](docs/PROJECT_SUMMARY.md)** - Detailed overview and learning journey
+- **[Technical Documentation](docs/TECHNICAL.md)** - Implementation details
+- **[Configuration Guide](docs/CONFIGURATION_GUIDE.md)** - Parameter tuning
+
+## 🧪 Testing
+
+Run the comprehensive test suite:
+
+```bash
+cd build
+./test_scheduler
+```
+
+Tests cover:
+- Process creation and management
+- Queue operations
+- Scheduler logic
+- Performance metric calculations
+- Edge cases and error conditions
+
+## 🎯 Usage Examples
+
+### Basic Simulation
+```bash
+./mlfq_scheduler
+# Choose option 1 for example processes
+# Select interactive mode to step through execution
+```
+
+### Algorithm Comparison
+```bash
+./mlfq_scheduler  
+# Choose option 10 (with FLTK) or 8 (without FLTK)
+# Compare performance of different last-queue algorithms
+```
+
+### Web Interface
+```bash
+./mlfq_scheduler
+# Choose option 5
+# Open http://localhost:8080
+# Use Config button to experiment with different settings
+```
+
+## 🤝 Contributing
+
+This is an educational project, but improvements are welcome! Areas for enhancement:
+
+- Multi-core MLFQ simulation
+- Additional visualization options
+- Mobile-friendly web interface
+- More scheduling algorithm variants
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- Inspired by classic MLFQ descriptions in operating systems textbooks
+- Built as part of an Operating Systems course
+- Thanks to the OS community for algorithm insights and feedback
+
+## 📞 Contact
+
+If you have questions about the implementation or find this useful for learning, feel free to reach out!
+
+---
+
+**Built with ❤️ for operating systems education**
