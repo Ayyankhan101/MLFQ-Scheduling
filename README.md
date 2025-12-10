@@ -133,16 +133,7 @@ This is an educational project, but improvements are welcome! Areas for enhancem
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
-
-- Inspired by classic MLFQ descriptions in operating systems textbooks
-- Built as part of an Operating Systems course
-- Thanks to the OS community for algorithm insights and feedback
-
 ## 📞 Contact
 
 If you have questions about the implementation or find this useful for learning, feel free to reach out!
 
----
-
-**Built with ❤️ for operating systems education**
