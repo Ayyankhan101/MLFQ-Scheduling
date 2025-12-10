@@ -61,6 +61,7 @@ void MLFQScheduler::checkNewArrivals()
     {
         if (process->getArrivalTime() == currentTime && process->getState() == ProcessState::NEW) 
         {
+            process->setState(ProcessState::READY);  // Set to READY when entering queue
             process->setQueueEnterTime(currentTime);
             readyQueues[0].enqueue(process);  // New processes start at highest priority
         }
@@ -170,6 +171,7 @@ void MLFQScheduler::moveToNextQueue(shared_ptr<Process> process)
     int nextPriority = min(currentPriority + 1, numQueues - 1);
 
     process->setPriority(nextPriority);
+    process->setState(ProcessState::READY);  // Set to READY when moved to queue
     process->setQueueEnterTime(currentTime);
 
     // For SJF and Priority Scheduling in the last queue, we need special handling
@@ -253,6 +255,7 @@ void MLFQScheduler::boostAllProcesses()
             if (process && process->getState() != ProcessState::TERMINATED) 
             {
                 process->resetToHighestPriority();
+                process->setState(ProcessState::READY);  // Set to READY when boosted
                 readyQueues[0].enqueue(process);
             }
         }
@@ -329,6 +332,7 @@ void MLFQScheduler::step()
         if (currentProcess && !processTerminated)
         {
             currentProcess->resetToHighestPriority();
+            currentProcess->setState(ProcessState::READY);  // Set to READY when boosted
             currentProcess->setQueueEnterTime(currentTime);
             readyQueues[0].enqueue(currentProcess);
             currentProcess = nullptr;

@@ -21,6 +21,9 @@
 using namespace std;
 using namespace TerminalUI;
 
+// Global variable to store the selected example set across all menu options
+static int globalExampleSet = 0;  // 0 means no example set selected
+
 // Function declarations  
 void runInteractiveMode(MLFQScheduler& scheduler, Visualizer& viz);
 void runAutoMode(MLFQScheduler& scheduler, Visualizer& viz);
@@ -453,25 +456,31 @@ void loadExampleProcessSet(MLFQScheduler& scheduler)
 void loadExampleProcessSet(MLFQScheduler& scheduler, int setNumber)
 {
     switch(setNumber) {
-        case 1:
+        case 1: // Standard Set: 5 processes with varying arrival
             scheduler.addProcess(0, 20);
             scheduler.addProcess(5, 12);
             scheduler.addProcess(10, 8);
             scheduler.addProcess(15, 16);
             scheduler.addProcess(20, 5);
             break;
-        case 2:
-            scheduler.addProcess(0, 8);
-            scheduler.addProcess(2, 4);
-            scheduler.addProcess(4, 9);
-            scheduler.addProcess(6, 5);
+        case 2: // CPU-Intensive: 3 long-running processes
+            scheduler.addProcess(0, 30);
+            scheduler.addProcess(5, 25);
+            scheduler.addProcess(10, 20);
             break;
-        case 3:
-            scheduler.addProcess(0, 15);
-            scheduler.addProcess(3, 6);
-            scheduler.addProcess(7, 12);
-            scheduler.addProcess(10, 3);
-            scheduler.addProcess(12, 8);
+        case 3: // I/O-Intensive: 5 short processes
+            scheduler.addProcess(0, 3);
+            scheduler.addProcess(2, 2);
+            scheduler.addProcess(4, 4);
+            scheduler.addProcess(6, 3);
+            scheduler.addProcess(8, 2);
+            break;
+        case 4: // Default Set: Same as Standard Set (fallback)
+            scheduler.addProcess(0, 20);
+            scheduler.addProcess(5, 12);
+            scheduler.addProcess(10, 8);
+            scheduler.addProcess(15, 16);
+            scheduler.addProcess(20, 5);
             break;
         default:
             loadExampleProcessSet(scheduler);
@@ -780,9 +789,6 @@ int main()
     SchedulerConfig config;  // Default configuration
     unique_ptr<MLFQScheduler> scheduler = make_unique<MLFQScheduler>(config);
     unique_ptr<Visualizer> viz = make_unique<Visualizer>(*scheduler);
-
-    // Global variable to store the selected example set
-    static int globalExampleSet = 0;  // 0 means no example set selected
 
     while (true)
     {

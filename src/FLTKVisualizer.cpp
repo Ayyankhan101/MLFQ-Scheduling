@@ -251,6 +251,7 @@ void FLTKVisualizer::updateCurrentProcessDisplay()
         double percent = (current->getBurstTime() > 0) ? 
             (static_cast<double>(progress) * 100.0 / current->getBurstTime()) : 0.0;
         
+        // Show as RUNNING when there's a current process that isn't terminated
         oss << "RUNNING: P" << setw(2) << setfill('0') << current->getPid()
             << " | Queue: " << current->getPriority()
             << " | Progress: " << progress << "/" << current->getBurstTime()

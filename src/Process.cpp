@@ -29,10 +29,8 @@ void Process::execute(int timeSlice, int currentTime)
         state = ProcessState::TERMINATED;
         // Note: completionTime will be set by scheduler after time increment
     }
-    else
-    {
-        state = ProcessState::READY;
-    }
+    // Keep state as RUNNING if process is not terminated
+    // The scheduler will set it to READY when the process is moved to a queue
 }
 
 void Process::calculateMetrics(int currentTime) 
