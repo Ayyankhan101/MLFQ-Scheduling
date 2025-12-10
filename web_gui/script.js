@@ -24,6 +24,7 @@ class MLFQWebInterface {
         this.renderProcessTable();
         this.updateMetrics();
         this.updateBoostStatus();
+        this.updateTimeDisplay();
     }
 
     updateBoostStatus() {
@@ -49,6 +50,11 @@ class MLFQWebInterface {
             timestamp.textContent = `Disabled at: ${now}`;
             countdown.textContent = '';
         }
+    }
+
+    updateTimeDisplay() {
+        const timeElement = document.getElementById('current-time');
+        timeElement.textContent = `Time: ${this.currentTime} ms`;
     }
 
     initializeEventListeners() {
@@ -383,6 +389,7 @@ class MLFQWebInterface {
         this.renderQueues();
         this.renderProcessTable();
         this.updateMetrics();
+        this.updateTimeDisplay();
     }
 
     stepSimulation() {
@@ -482,6 +489,7 @@ class MLFQWebInterface {
         this.renderProcessTable();
         this.updateMetrics();
         this.updateBoostStatus();
+        this.updateTimeDisplay();
         
         // Reset running process state after display
         if (runningProcess && runningProcess.state === 'RUNNING' && runningProcess.remainingTime > 0) {
