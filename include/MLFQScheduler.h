@@ -89,6 +89,9 @@ public:
     const vector<ProcessQueue>& getQueues() const { return readyQueues; }
     const vector<shared_ptr<Process>>& getAllProcesses() const { return allProcesses; }
     const vector<shared_ptr<Process>>& getCompletedProcesses() const { return completedProcesses; }
+    int getBoostTimer() const { return boostTimer; }
+    int getBoostInterval() const { return boostInterval; }
+    int getNextBoostIn() const { return boostInterval - boostTimer; }
 
     // Statistics
     SchedulerStats getStats() const;

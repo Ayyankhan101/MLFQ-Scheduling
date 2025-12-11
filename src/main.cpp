@@ -13,6 +13,8 @@
 #include <algorithm>
 #include <ctime>
 #include <limits>
+#include <thread>
+#include <chrono>
 
 #ifdef FLTK_AVAILABLE
 #include "FLTKVisualizer.h"

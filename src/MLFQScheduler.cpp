@@ -264,16 +264,9 @@ void MLFQScheduler::boostAllProcesses()
 
 void MLFQScheduler::updateWaitTimes() 
 {
-    for (auto& queue : readyQueues) 
-    {
-        for (const auto& process : queue.getProcesses()) 
-        {
-            if (process->getState() == ProcessState::READY) 
-            {
-                process->incrementWaitTime();
-            }
-        }
-    }
+    // Wait times are calculated in Process::calculateMetrics()
+    // This method is kept for compatibility but doesn't need to do anything
+    // since we calculate wait time as: turnaroundTime - burstTime
 }
 
 void MLFQScheduler::step() 
@@ -374,10 +367,10 @@ bool MLFQScheduler::hasProcesses() const
         return true;
     }
     
-    // Check if there are processes yet to arrive
+    // Check if there are processes yet to arrive (including at current time)
     for (const auto& process : allProcesses) 
     {
-        if (process->getArrivalTime() > currentTime) 
+        if (process->getArrivalTime() >= currentTime && process->getState() != ProcessState::TERMINATED) 
         {
             return true;
         }

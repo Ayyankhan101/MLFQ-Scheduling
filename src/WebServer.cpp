@@ -6,6 +6,8 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <cstring>
+#include <cstdlib>
+#include <ctime>
 using namespace std;
 
 WebServer::WebServer(MLFQScheduler* sched, int port) 
@@ -139,6 +141,169 @@ void WebServer::handleClient(int clientSocket) {
             response += "\r\n";
             response += content;
         }
+    } else if (request.find("GET /api/status") != string::npos) {
+        auto stats = scheduler->getStats();
+        int lastBoostTime = scheduler->getCurrentTime() - scheduler->getBoostTimer();
+        string json = "{\"time\":" + to_string(stats.currentTime) + 
+                     ",\"hasProcesses\":" + (scheduler->hasProcesses() ? "true" : "false") +
+                     ",\"completedProcesses\":" + to_string(stats.completedProcesses) +
+                     ",\"totalProcesses\":" + to_string(stats.totalProcesses) +
+                     ",\"cpuUtilization\":" + to_string(stats.cpuUtilization) +
+                     ",\"avgWaitTime\":" + to_string(stats.avgWaitTime) +
+                     ",\"avgTurnaroundTime\":" + to_string(stats.avgTurnaroundTime) +
+                     ",\"avgResponseTime\":" + to_string(stats.avgResponseTime) +
+                     ",\"boostInterval\":" + to_string(scheduler->getBoostInterval()) +
+                     ",\"lastBoostTime\":" + to_string(lastBoostTime) +
+                     ",\"nextBoostIn\":" + to_string(scheduler->getNextBoostIn()) + "}";
+        
+        response = "HTTP/1.1 200 OK\r\n";
+        response += "Content-Type: application/json\r\n";
+        response += "Access-Control-Allow-Origin: *\r\n";
+        response += "Content-Length: " + to_string(json.length()) + "\r\n";
+        response += "\r\n";
+        response += json;
+    } else if (request.find("GET /api/processes") != string::npos) {
+        string json = "{\"processes\":[";
+        auto processes = scheduler->getAllProcesses();
+        for (size_t i = 0; i < processes.size(); i++) {
+            auto p = processes[i];
+            string status = "Ready";
+            if (p->getState() == ProcessState::TERMINATED) status = "Completed";
+            else if (p->getState() == ProcessState::RUNNING) status = "Running";
+            
+            json += "{\"pid\":" + to_string(p->getPid()) +
+                   ",\"arrival\":" + to_string(p->getArrivalTime()) +
+                   ",\"burst\":" + to_string(p->getBurstTime()) +
+                   ",\"remaining\":" + to_string(p->getRemainingTime()) +
+                   ",\"queue\":" + to_string(p->getPriority()) +
+                   ",\"status\":\"" + status + "\"}";
+            if (i < processes.size() - 1) json += ",";
+        }
+        json += "]}";
+        
+        response = "HTTP/1.1 200 OK\r\n";
+        response += "Content-Type: application/json\r\n";
+        response += "Access-Control-Allow-Origin: *\r\n";
+        response += "Content-Length: " + to_string(json.length()) + "\r\n";
+        response += "\r\n";
+        response += json;
+    } else if (request.find("GET /api/queues") != string::npos) {
+        string json = "{\"queues\":[";
+        auto queues = scheduler->getQueues();
+        for (size_t i = 0; i < queues.size(); i++) {
+            json += "{\"id\":" + to_string(i) +
+                   ",\"size\":" + to_string(queues[i].size()) + "}";
+            if (i < queues.size() - 1) json += ",";
+        }
+        json += "]}";
+        
+        response = "HTTP/1.1 200 OK\r\n";
+        response += "Content-Type: application/json\r\n";
+        response += "Access-Control-Allow-Origin: *\r\n";
+        response += "Content-Length: " + to_string(json.length()) + "\r\n";
+        response += "\r\n";
+        response += json;
+    } else if (request.find("POST /api/preset") != string::npos) {
+        // Parse preset set number from request body
+        int setNumber = 1; // default
+        size_t setPos = request.find("set=");
+        if (setPos != string::npos) {
+            setNumber = stoi(request.substr(setPos + 4, 1));
+        }
+        
+        // Load different preset sets based on setNumber
+        switch(setNumber) {
+            case 1: // Standard Set
+                scheduler->addProcess(0, 20);
+                scheduler->addProcess(5, 12);
+                scheduler->addProcess(10, 8);
+                scheduler->addProcess(15, 16);
+                scheduler->addProcess(20, 5);
+                break;
+            case 2: // CPU-Intensive
+                scheduler->addProcess(0, 30);
+                scheduler->addProcess(5, 25);
+                scheduler->addProcess(10, 20);
+                break;
+            case 3: // I/O-Intensive
+                scheduler->addProcess(0, 3);
+                scheduler->addProcess(2, 2);
+                scheduler->addProcess(4, 4);
+                scheduler->addProcess(6, 3);
+                scheduler->addProcess(8, 2);
+                break;
+            case 4: // Mixed Workload
+                scheduler->addProcess(0, 15);
+                scheduler->addProcess(2, 3);
+                scheduler->addProcess(4, 8);
+                scheduler->addProcess(6, 2);
+                scheduler->addProcess(8, 12);
+                scheduler->addProcess(10, 5);
+                scheduler->addProcess(12, 7);
+                break;
+            default: // Default to Standard Set
+                scheduler->addProcess(0, 20);
+                scheduler->addProcess(5, 12);
+                scheduler->addProcess(10, 8);
+                scheduler->addProcess(15, 16);
+                scheduler->addProcess(20, 5);
+        }
+        
+        response = "HTTP/1.1 200 OK\r\n";
+        response += "Content-Type: application/json\r\n";
+        response += "Access-Control-Allow-Origin: *\r\n";
+        response += "Content-Length: 15\r\n";
+        response += "\r\n";
+        response += "{\"success\":true}";
+    } else if (request.find("POST /api/random") != string::npos) {
+        // Add random processes
+        srand(time(nullptr));
+        for (int i = 0; i < 5; i++) {
+            scheduler->addProcess(rand() % 10, (rand() % 15) + 1);
+        }
+        
+        response = "HTTP/1.1 200 OK\r\n";
+        response += "Content-Type: application/json\r\n";
+        response += "Access-Control-Allow-Origin: *\r\n";
+        response += "Content-Length: 15\r\n";
+        response += "\r\n";
+        response += "{\"success\":true}";
+    } else if (request.find("POST /api/step") != string::npos) {
+        scheduler->step();
+        response = "HTTP/1.1 200 OK\r\n";
+        response += "Content-Type: application/json\r\n";
+        response += "Access-Control-Allow-Origin: *\r\n";
+        response += "Content-Length: 15\r\n";
+        response += "\r\n";
+        response += "{\"success\":true}";
+    } else if (request.find("POST /api/reset") != string::npos) {
+        scheduler->reset();
+        response = "HTTP/1.1 200 OK\r\n";
+        response += "Content-Type: application/json\r\n";
+        response += "Access-Control-Allow-Origin: *\r\n";
+        response += "Content-Length: 15\r\n";
+        response += "\r\n";
+        response += "{\"success\":true}";
+    } else if (request.find("POST /api/add-process") != string::npos) {
+        // Parse POST data for arrival and burst time
+        size_t bodyStart = request.find("\r\n\r\n");
+        if (bodyStart != string::npos) {
+            string body = request.substr(bodyStart + 4);
+            // Simple parsing - expect "arrival=X&burst=Y"
+            size_t arrivalPos = body.find("arrival=");
+            size_t burstPos = body.find("burst=");
+            if (arrivalPos != string::npos && burstPos != string::npos) {
+                int arrival = stoi(body.substr(arrivalPos + 8, body.find("&", arrivalPos) - arrivalPos - 8));
+                int burst = stoi(body.substr(burstPos + 6));
+                scheduler->addProcess(arrival, burst);
+            }
+        }
+        response = "HTTP/1.1 200 OK\r\n";
+        response += "Content-Type: application/json\r\n";
+        response += "Access-Control-Allow-Origin: *\r\n";
+        response += "Content-Length: 15\r\n";
+        response += "\r\n";
+        response += "{\"success\":true}";
     } else {
         string content = "404 Not Found";
         response = "HTTP/1.1 404 Not Found\r\n";

@@ -3,228 +3,257 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MLFQ Scheduler - Web Interface</title>
+    <title>MLFQ Scheduler - Professional Interface</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
-        <header class="header">
-            <h1>MLFQ Scheduler</h1>
-            <p>Multilevel Feedback Queue Scheduling </p>
-        </header>
+        <h1>🚀 MLFQ Scheduler Dashboard</h1>
+        
+        <div class="controls">
+            <button id="start-btn">▶️ Start</button>
+            <button id="pause-btn">⏸️ Pause</button>
+            <button id="step-btn">⏭️ Step</button>
+            <button id="reset-btn">🔄 Reset</button>
+            <button id="preset-btn">📋 Preset Processes</button>
+            <button id="random-btn">🎲 Random Processes</button>
+            <button id="add-process-btn">➕ Add Process</button>
+            <button id="config-btn">⚙️ Config</button>
+        </div>
 
-        <div class="control-panel">
-            <div class="controls">
-                <button id="startBtn" class="btn btn-primary">Start Simulation</button>
-                <button id="pauseBtn" class="btn btn-secondary">Pause</button>
-                <button id="resetBtn" class="btn btn-danger">Reset</button>
-                <button id="stepBtn" class="btn btn-info">Step</button>
-                <button id="configBtn" class="btn btn-config">Config</button>
+        <div class="status-panel">
+            <div class="status-item">
+                <h3>Current Time</h3>
+                <div class="value" id="current-time">0</div>
             </div>
-            
-            <div class="boost-status">
-                <span id="current-time" class="time-display">Time: 0 ms</span>
-                <span id="boost-indicator" class="boost-enabled">Boost Priority: ON</span>
-                <span id="boost-timestamp"></span>
-                <span id="boost-countdown"></span>
+            <div class="status-item">
+                <h3>Active Processes</h3>
+                <div class="value" id="active-processes">0</div>
+            </div>
+            <div class="status-item">
+                <h3>Completed</h3>
+                <div class="value" id="completed-processes">0</div>
+            </div>
+            <div class="status-item">
+                <h3>CPU Utilization</h3>
+                <div class="value" id="cpu-utilization">0%</div>
             </div>
         </div>
 
         <div class="main-content">
             <div class="queues-section">
-                <h2>Queue Status</h2>
-                <div id="queues" class="queues-container"></div>
-            </div>
-
-            <div class="process-section">
-                <h2>Process Information</h2>
-                <div class="process-controls">
-                    <button id="addProcessBtn" class="btn btn-success">Add Process</button>
-                    <button id="loadExampleBtn" class="btn btn-outline">Load Example</button>
-                </div>
-                <div id="processTable" class="process-table"></div>
-            </div>
-        </div>
-
-        <div class="stats-section">
-            <h2>Performance Metrics</h2>
-            <div class="metrics-grid">
-                <div class="metric-card">
-                    <h3>Average Wait Time</h3>
-                    <span id="avgWaitTime">0.0</span>
-                </div>
-                <div class="metric-card">
-                    <h3>Average Turnaround</h3>
-                    <span id="avgTurnaround">0.0</span>
-                </div>
-                <div class="metric-card">
-                    <h3>CPU Utilization</h3>
-                    <span id="cpuUtil">0%</span>
-                </div>
-                <div class="metric-card">
-                    <h3>Throughput</h3>
-                    <span id="throughput">0.0</span>
+                <h2 class="section-title">📋 Process Queues</h2>
+                <div id="queues-container"></div>
+                
+                <div class="boost-status">
+                    <div id="boost-indicator" class="boost-enabled">Priority Boost: ON</div>
+                    <div id="boost-timestamp">Last boost: Time 0</div>
+                    <div id="boost-countdown">Next boost in: 20 time units</div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Process Modal -->
-    <div id="processModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>Add New Process</h2>
-            <form id="processForm">
-                <div class="form-group">
-                    <label for="processId">Process ID:</label>
-                    <input type="text" id="processId" required>
+            <div class="processes-section">
+                <h2 class="section-title">📊 Process Details</h2>
+                <div id="process-table-container">
+                    <table class="process-table" id="process-table">
+                        <thead>
+                            <tr>
+                                <th>PID</th>
+                                <th>Arrival</th>
+                                <th>Burst</th>
+                                <th>Remaining</th>
+                                <th>Queue</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="process-table-body">
+                        </tbody>
+                    </table>
                 </div>
-                <div class="form-group">
-                    <label for="arrivalTime">Arrival Time:</label>
-                    <input type="number" id="arrivalTime" min="0" required>
+
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-value" id="avg-wait-time">0.0</div>
+                        <div class="metric-label">Avg Wait Time</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="avg-turnaround-time">0.0</div>
+                        <div class="metric-label">Avg Turnaround</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="avg-response-time">0.0</div>
+                        <div class="metric-label">Avg Response</div>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="burstTime">Burst Time:</label>
-                    <input type="number" id="burstTime" min="1" required>
-                </div>
-                <div class="form-group">
-                    <label for="priority">Priority:</label>
-                    <input type="number" id="priority" min="0" max="3" value="0">
-                </div>
-                <button type="submit" class="btn btn-primary">Add Process</button>
-            </form>
+            </div>
         </div>
     </div>
 
-    <!-- Config Modal -->
-    <div id="configModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>Process Set Configuration</h2>
-            <div class="config-tabs">
-                <button class="tab-btn active" data-tab="presets">Preset Sets</button>
-                <button class="tab-btn" data-tab="custom">Custom Set</button>
-                <button class="tab-btn" data-tab="random">Random Generator</button>
-                <button class="tab-btn" data-tab="queueConfig">Queue Config</button>
-                <button class="tab-btn" data-tab="algorithm">Algorithm</button>
-                <button class="tab-btn" data-tab="speed">Speed Control</button>
-            </div>
+    <!-- Configuration Modal -->
+    <div id="config-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 15px; max-width: 500px; width: 90%;">
+            <h3 style="margin-bottom: 20px; color: #333;">⚙️ Scheduler Configuration</h3>
             
-            <div id="presets" class="tab-content active">
-                <h3>Choose a Preset Process Set</h3>
-                <div class="preset-grid">
-                    <button class="preset-btn" data-preset="basic">Basic Set (4 processes)</button>
-                    <button class="preset-btn" data-preset="mixed">Mixed Workload (6 processes)</button>
-                    <button class="preset-btn" data-preset="heavy">Heavy Load (8 processes)</button>
-                    <button class="preset-btn" data-preset="interactive">Interactive Tasks (5 processes)</button>
+            <div class="config-panel">
+                <div class="config-row">
+                    <label>Speed (ms):</label>
+                    <input type="range" id="speed-slider" min="1" max="10" value="5">
+                    <span id="speed-value">500ms</span>
                 </div>
-            </div>
-            
-            <div id="custom" class="tab-content">
-                <h3>Create Custom Process Set</h3>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="customNumProcesses">Number of Processes:</label>
-                        <input type="number" id="customNumProcesses" min="1" max="10" value="4">
-                    </div>
-                    <div class="form-group">
-                        <label for="baseArrival">Base Arrival Time:</label>
-                        <input type="number" id="baseArrival" min="0" max="10" value="0">
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="arrivalStep">Arrival Step:</label>
-                        <input type="number" id="arrivalStep" min="1" max="5" value="1">
-                    </div>
-                    <div class="form-group">
-                        <label for="avgBurst">Average Burst Time:</label>
-                        <input type="number" id="avgBurst" min="3" max="15" value="6">
-                    </div>
-                </div>
-                <button id="loadCustomBtn" class="btn btn-primary">Generate Custom Set</button>
-            </div>
-            
-            <div id="random" class="tab-content">
-                <h3>Random Process Generator</h3>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="numProcesses">Number of Processes:</label>
-                        <input type="number" id="numProcesses" min="3" max="15" value="5">
-                    </div>
-                    <div class="form-group">
-                        <label for="maxArrival">Max Arrival Time:</label>
-                        <input type="number" id="maxArrival" min="0" max="20" value="10">
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="minBurst">Min Burst Time:</label>
-                        <input type="number" id="minBurst" min="1" max="10" value="2">
-                    </div>
-                    <div class="form-group">
-                        <label for="maxBurst">Max Burst Time:</label>
-                        <input type="number" id="maxBurst" min="5" max="20" value="12">
-                    </div>
-                </div>
-                <button id="generateRandomBtn" class="btn btn-primary">Generate Random Set</button>
-            </div>
-            
-            <div id="queueConfig" class="tab-content">
-                <h3>Queue Configuration</h3>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="numQueues">Number of Queues:</label>
-                        <input type="number" id="numQueues" min="2" max="6" value="4">
-                    </div>
-                    <div class="form-group">
-                        <label for="quantumMode">Quantum Mode:</label>
-                        <select id="quantumMode">
-                            <option value="auto">Auto (1,2,4,8...)</option>
-                            <option value="custom">Custom Values</option>
-                        </select>
-                    </div>
-                </div>
-                <div id="customQuantums" class="form-group" style="display:none;">
-                    <label for="quantumValues">Custom Quantums (comma separated):</label>
-                    <input type="text" id="quantumValues" placeholder="1,3,5,10" value="1,2,4,8">
-                </div>
-                <button id="applyQueueConfigBtn" class="btn btn-primary">Apply Queue Config</button>
-            </div>
-            
-            <div id="algorithm" class="tab-content">
-                <h3>Algorithm Configuration</h3>
-                <div class="form-group">
-                    <label for="lastQueueAlgorithm">Last Queue Algorithm:</label>
-                    <select id="lastQueueAlgorithm">
-                        <option value="rr">Round Robin (Default)</option>
+                
+                <div class="config-row">
+                    <label>Last Queue Algorithm:</label>
+                    <select id="last-queue-algorithm">
+                        <option value="rr">Round Robin</option>
                         <option value="sjf">Shortest Job First</option>
-                        <option value="fcfs">First Come First Serve</option>
-                        <option value="priority">Priority Scheduling</option>
+                        <option value="priority">Priority</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label for="priorityBoost">Priority Boost (Aging):</label>
-                    <select id="priorityBoost">
-                        <option value="enabled">Enabled</option>
-                        <option value="disabled">Disabled</option>
-                    </select>
+                
+                <div class="config-row">
+                    <label>Priority Boost:</label>
+                    <input type="checkbox" id="priority-boost" checked>
                 </div>
-                <div class="form-group">
-                    <label for="boostInterval">Boost Interval (time units):</label>
-                    <input type="number" id="boostInterval" min="5" max="50" value="20">
+                
+                <div class="config-row">
+                    <label>Boost Interval:</label>
+                    <input type="number" id="boost-interval" value="20" min="1" max="100">
                 </div>
-                <button id="applyAlgorithmBtn" class="btn btn-primary">Apply Algorithm Config</button>
             </div>
             
-            <div id="speed" class="tab-content">
-                <h3>Simulation Speed Control</h3>
-                <div class="form-group">
-                    <label for="speed">Simulation Speed:</label>
-                    <input type="range" id="speed" min="1" max="10" value="5">
-                    <span id="speedValue">5x</span>
+            <div style="text-align: center; margin-top: 20px;">
+                <button onclick="applyConfig()">✅ Apply</button>
+                <button onclick="closeConfig()" style="background: #f44336; margin-left: 10px;">❌ Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Process Modal -->
+    <div id="add-process-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 15px; max-width: 400px; width: 90%;">
+            <h3 style="margin-bottom: 20px; color: #333;">➕ Add New Process</h3>
+            
+            <div class="config-panel">
+                <div class="config-row">
+                    <label>Arrival Time:</label>
+                    <input type="number" id="new-arrival-time" value="0" min="0">
                 </div>
-                <p class="help-text">Adjust the speed of the simulation from 1x (slowest) to 10x (fastest)</p>
+                
+                <div class="config-row">
+                    <label>Burst Time:</label>
+                    <input type="number" id="new-burst-time" value="5" min="1">
+                </div>
+                
+                <div class="config-row">
+                    <label>Priority:</label>
+                    <input type="number" id="new-priority" value="1" min="1" max="10">
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 20px;">
+                <button onclick="addNewProcess()">✅ Add Process</button>
+                <button onclick="closeAddProcess()" style="background: #f44336; margin-left: 10px;">❌ Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preset Processes Modal -->
+    <div id="preset-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 15px; max-width: 600px; width: 90%;">
+            <h3 style="margin-bottom: 20px; color: #333;">📋 Load Preset Process Sets</h3>
+            
+            <div class="config-panel">
+                <div class="preset-options">
+                    <div class="preset-option" onclick="selectPreset(1)">
+                        <h4>1. Standard Set (5 processes)</h4>
+                        <p>Mixed workload with varying arrival times</p>
+                        <ul>
+                            <li>P1: Arrival=0, Burst=20</li>
+                            <li>P2: Arrival=5, Burst=12</li>
+                            <li>P3: Arrival=10, Burst=8</li>
+                            <li>P4: Arrival=15, Burst=16</li>
+                            <li>P5: Arrival=20, Burst=5</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="preset-option" onclick="selectPreset(2)">
+                        <h4>2. CPU-Intensive (3 processes)</h4>
+                        <p>Long-running processes for testing queue demotion</p>
+                        <ul>
+                            <li>P1: Arrival=0, Burst=30</li>
+                            <li>P2: Arrival=5, Burst=25</li>
+                            <li>P3: Arrival=10, Burst=20</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="preset-option" onclick="selectPreset(3)">
+                        <h4>3. I/O-Intensive (5 processes)</h4>
+                        <p>Short processes that complete quickly</p>
+                        <ul>
+                            <li>P1: Arrival=0, Burst=3</li>
+                            <li>P2: Arrival=2, Burst=2</li>
+                            <li>P3: Arrival=4, Burst=4</li>
+                            <li>P4: Arrival=6, Burst=3</li>
+                            <li>P5: Arrival=8, Burst=2</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="preset-option" onclick="selectPreset(4)">
+                        <h4>4. Mixed Workload (7 processes)</h4>
+                        <p>Combination of short and long processes</p>
+                        <ul>
+                            <li>P1: Arrival=0, Burst=15</li>
+                            <li>P2: Arrival=2, Burst=3</li>
+                            <li>P3: Arrival=4, Burst=8</li>
+                            <li>P4: Arrival=6, Burst=2</li>
+                            <li>P5: Arrival=8, Burst=12</li>
+                            <li>P6: Arrival=10, Burst=5</li>
+                            <li>P7: Arrival=12, Burst=7</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <p style="margin-top: 15px;"><strong>Note:</strong> This will replace all existing processes.</p>
+            </div>
+            
+            <div style="text-align: center; margin-top: 20px;">
+                <button onclick="closePreset()" style="background: #f44336;">❌ Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Random Processes Modal -->
+    <div id="random-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 15px; max-width: 500px; width: 90%;">
+            <h3 style="margin-bottom: 20px; color: #333;">🎲 Generate Random Processes</h3>
+            
+            <div class="config-panel">
+                <div class="config-row">
+                    <label>Number of Processes:</label>
+                    <input type="number" id="random-count" value="5" min="1" max="20">
+                </div>
+                
+                <div class="config-row">
+                    <label>Max Arrival Time:</label>
+                    <input type="number" id="random-max-arrival" value="10" min="0" max="50">
+                </div>
+                
+                <div class="config-row">
+                    <label>Min Burst Time:</label>
+                    <input type="number" id="random-min-burst" value="1" min="1" max="20">
+                </div>
+                
+                <div class="config-row">
+                    <label>Max Burst Time:</label>
+                    <input type="number" id="random-max-burst" value="15" min="1" max="50">
+                </div>
+                
+                <p><strong>Note:</strong> This will add to existing processes.</p>
+            </div>
+            
+            <div style="text-align: center; margin-top: 20px;">
+                <button onclick="confirmRandom()">✅ Generate</button>
+                <button onclick="closeRandom()" style="background: #f44336; margin-left: 10px;">❌ Cancel</button>
             </div>
         </div>
     </div>
