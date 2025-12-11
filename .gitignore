@@ -56,3 +56,4 @@ core.*
 # Debug files
 *.dSYM/
 *.pdb
+logs/
