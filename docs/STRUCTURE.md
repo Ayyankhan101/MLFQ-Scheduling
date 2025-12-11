@@ -9,7 +9,8 @@ END-SEM-PROJECT/
 │   ├── Visualizer.h              # Terminal visualization
 │   ├── FLTKVisualizer.h          # GUI visualization
 │   ├── SchedulerConfig.h         # Configuration management
-│   └── TerminalUI.h              # Terminal UI utilities
+│   ├── TerminalUI.h              # Terminal UI utilities
+│   └── WebServer.h               # Web server implementation
 │
 ├── src/                          # Source files
 │   ├── Process.cpp               # Process implementation
@@ -17,6 +18,7 @@ END-SEM-PROJECT/
 │   ├── MLFQScheduler.cpp         # Scheduler logic
 │   ├── Visualizer.cpp            # Terminal visualization implementation
 │   ├── FLTKVisualizer.cpp        # GUI visualization implementation
+│   ├── WebServer.cpp             # Web server implementation
 │   └── main.cpp                  # Main program with UI
 │
 ├── tests/                        # Unit tests

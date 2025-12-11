@@ -42,12 +42,43 @@ Step-by-step execution perfect for understanding the algorithm.
 
 ```
 ├── src/           # Core C++ implementation
-├── include/       # Header files  
+│   ├── MLFQScheduler.cpp    # Core MLFQ algorithm
+│   ├── WebServer.cpp        # Built-in HTTP server for web GUI
+│   └── ...                 # Other C++ source files
+├── include/       # Header files
+│   ├── MLFQScheduler.h      # MLFQ scheduler definition
+│   ├── WebServer.h          # Web server interface
+│   └── ...                 # Other header files
 ├── web_gui/       # Web interface (HTML/CSS/JS)
+│   ├── index.html          # Main web interface
+│   ├── script.js           # JavaScript MLFQ implementation
+│   └── styles.css          # Styling
 ├── docs/          # Comprehensive documentation
 ├── tests/         # Unit tests
 └── build/         # Compiled binaries
 ```
+
+## 🌐 Web GUI Architecture
+
+The project features a unique **C++-to-Web integration** that serves a complete JavaScript-based MLFQ scheduler:
+
+### Server-Side (C++):
+- **WebServer.cpp**: Built-in HTTP server that serves static files
+- **Built-in web server**: No external dependencies needed
+- **Cross-platform**: Works on Linux, macOS, and Windows
+
+### Client-Side (JavaScript):
+- **Complete MLFQ implementation**: JavaScript version mirrors the C++ algorithm
+- **Real-time visualization**: Processes move between queues in real-time
+- **Interactive controls**: Start, pause, reset, configure, and step through execution
+- **Performance metrics**: Live calculation and display of scheduling metrics
+
+### Integration Pattern:
+1. C++ application starts a web server on port 8080
+2. Web server serves HTML, CSS, and JavaScript files to browser
+3. JavaScript runs independently in browser, implementing the full MLFQ algorithm
+4. No continuous communication needed between C++ and JavaScript
+5. Both implementations produce identical results for consistency
 
 ## 🎓 Educational Value
 

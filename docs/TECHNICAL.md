@@ -259,6 +259,60 @@ int maxBurstTime;           // Max burst time (1-100 ms)
 
 **Purpose**: Provides terminal UI utilities and formatting
 
+### 8. WebServer Class
+
+**Purpose**: Built-in HTTP server to serve the web-based GUI interface
+
+**Key Attributes:**
+```cpp
+MLFQScheduler* scheduler;  // Pointer to the scheduler instance
+atomic<bool> running;      // Server running state
+thread serverThread;       // Server execution thread
+int port;                  // Server port (default 8080)
+```
+
+**Key Methods:**
+- `start()`: Start the HTTP server in a separate thread
+- `stop()`: Stop the HTTP server and join the thread
+- `handleClient(int clientSocket)`: Handle individual HTTP requests
+- `isRunning()`: Check if server is currently running
+- `getPort()`: Get the current server port
+
+**Implementation Details:**
+- Uses standard POSIX sockets for cross-platform compatibility
+- Serves static files (HTML, CSS, JavaScript) from the web_gui directory
+- Supports multiple port selection if default is busy (tries ports from requested to requested+9)
+- Handles GET requests for index.html, styles.css, and script.js
+- Reuses port with SO_REUSEADDR to prevent binding issues
+
+**HTTP Request Handling:**
+```cpp
+void WebServer::handleClient(int clientSocket) {
+    // Read HTTP request
+    char buffer[4096] = {0};
+    read(clientSocket, buffer, sizeof(buffer));
+    string request(buffer);
+
+    // Route based on requested resource
+    if (request.find("GET / ") != string::npos) {
+        // Serve index.html
+    } else if (request.find("GET /styles.css") != string::npos) {
+        // Serve styles.css
+    } else if (request.find("GET /script.js") != string::npos) {
+        // Serve script.js (contains the MLFQ implementation in JS)
+    }
+}
+```
+
+**Thread Safety:**
+- Uses atomic<bool> for thread-safe running flag
+- Server runs in dedicated thread to not block main application
+- No shared mutable state between server and scheduler (the JS runs independently)
+
+### 9. TerminalUI Class
+
+**Purpose**: Provides terminal UI utilities and formatting
+
 **Key Methods:**
 - `Style::header()`: Formatted header text
 - `Style::success()`: Success messages
@@ -521,3 +575,82 @@ The system supports different algorithms for the last queue:
 1. **Round Robin**: Standard MLFQ behavior
 2. **Shortest Job First**: Process with shortest remaining time executes next
 3. **Priority Scheduling**: Process with highest priority (shortest burst) executes next
+
+## JavaScript Web Interface Implementation
+
+### MLFQWebInterface Class
+
+**Purpose**: Complete client-side MLFQ scheduler implementation that runs in the browser
+
+**Key Attributes:**
+```javascript
+this.processes = [];  // Array of process objects with arrivalTime, burstTime, etc.
+this.queues = [       // Array of queue objects, each with id, name, quantum, and processes
+    { id: 0, name: 'Queue 0 (Highest Priority)', quantum: 1, processes: [] },
+    { id: 1, name: 'Queue 1', quantum: 2, processes: [] },
+    { id: 2, name: 'Queue 2', quantum: 4, processes: [] },
+    { id: 3, name: 'Queue 3 (Lowest Priority)', quantum: 8, processes: [] }
+];
+this.currentTime = 0;          // Current simulation time
+this.isRunning = false;        // Simulation state
+this.speed = 5;                // Animation speed multiplier
+this.intervalId = null;        // Timer ID for automatic mode
+this.lastQueueAlgorithm = 'rr'; // Algorithm for last queue (rr, sjf, fcfs, priority)
+this.priorityBoost = true;     // Enable/disable priority boost
+this.boostInterval = 20;       // Boost interval in time units
+this.currentQuantumTime = 0;   // Track quantum usage for current process
+this.currentRunningProcess = null; // Track currently running process
+```
+
+**Key Methods:**
+- `simulationStep()`: Execute one time unit of the MLFQ algorithm
+- `startSimulation()`: Start automatic simulation with specified speed
+- `pauseSimulation()`: Pause the simulation
+- `resetSimulation()`: Reset all processes and queues to initial state
+- `renderQueues()`: Update HTML visualization of queues
+- `renderProcessTable()`: Update HTML table showing process information
+- `updateMetrics()`: Calculate and display performance metrics
+- `insertIntoLastQueue(process, queueIndex)`: Insert process using configured algorithm for last queue
+- `performPriorityBoost()`: Move all processes from lower queues to highest priority
+
+**MLFQ Algorithm Implementation:**
+The JavaScript implementation mirrors the C++ algorithm:
+1. Check for priority boost at boostInterval
+2. Check for new arrivals at current time
+3. Execute processes in order of queue priority (highest first)
+4. Track quantum usage and demote processes when quantum expires
+5. Handle process completion and termination
+
+**Last Queue Algorithm Support:**
+The JavaScript implementation supports the same three algorithms for the last queue:
+- Round Robin (default): Processes added to end of queue
+- Shortest Job First: Inserted by remaining time (shortest first)
+- First Come First Serve: Inserted by arrival time (earliest first)
+- Priority Scheduling: Inserted by wait time (longest waiting first)
+
+**Performance Metrics Calculation:**
+- Average Wait Time: Total wait time / completed processes
+- Average Turnaround Time: Total turnaround time / completed processes
+- CPU Utilization: (Total burst time / current time) * 100
+- Throughput: Completed processes / current time
+
+## C++-JavaScript Integration
+
+### Architecture:
+1. C++ WebServer serves static files (HTML, CSS, JS) to browser
+2. JavaScript runs independently in browser, implementing full MLFQ algorithm
+3. No continuous communication between C++ and JavaScript during simulation
+4. Both implementations follow identical algorithm logic for consistency
+
+### File Serving Process:
+```cpp
+void WebServer::handleClient(int clientSocket) {
+    // When browser requests /script.js:
+    if (request.find("GET /script.js") != string::npos) {
+        ifstream file("../web_gui/script.js");
+        if (file.is_open()) {
+            // Send JavaScript file to browser
+        }
+    }
+}
+```
