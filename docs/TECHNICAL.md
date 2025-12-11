@@ -48,7 +48,539 @@
                      └─────────────┘
 ```
 
-## Core Classes
+### Web Architecture
+
+```
+┌─────────────────┐    HTTP     ┌─────────────────┐
+│   C++ Backend   │◄──────────►│  Web Frontend   │
+│                 │   Port 8080 │                 │
+│ ┌─────────────┐ │             │ ┌─────────────┐ │
+│ │ WebServer   │ │             │ │ JavaScript  │ │
+│ │ - Static    │ │             │ │ MLFQ Engine │ │
+│ │ - Files     │ │             │ │             │ │
+│ └─────────────┘ │             │ └─────────────┘ │
+│                 │             │                 │
+│ ┌─────────────┐ │             │ ┌─────────────┐ │
+│ │ MLFQ Core   │ │             │ │ Visualization│ │
+│ │ Algorithm   │ │             │ │ - Real-time │ │
+│ │             │ │             │ │ - Interactive│ │
+│ └─────────────┘ │             │ └─────────────┘ │
+└─────────────────┘             └─────────────────┘
+```
+
+## Core Algorithm Implementation
+
+### MLFQ Scheduler Class
+
+```cpp
+class MLFQScheduler {
+private:
+    vector<ProcessQueue> readyQueues;           // Priority queues
+    vector<shared_ptr<Process>> allProcesses;   // All processes
+    vector<shared_ptr<Process>> completedProcesses;
+    shared_ptr<Process> currentProcess;         // Currently running
+    
+    int currentTime;                            // System clock
+    int boostTimer;                            // Aging timer
+    int boostInterval;                         // Boost frequency
+    int numQueues;                             // Number of queues
+    int pidCounter;                            // Process ID counter
+    
+    SchedulerConfig config;                    // Configuration
+    LastQueueAlgorithm lastQueueAlgorithm;     // Last queue algorithm
+    
+    vector<ExecutionRecord> executionLog;      // Gantt chart data
+    
+public:
+    // Constructors
+    MLFQScheduler(int queues, int boost);              // Legacy
+    MLFQScheduler(const SchedulerConfig& cfg);         // Configuration-based
+    
+    // Core scheduling methods
+    void addProcess(int arrivalTime, int burstTime);
+    void addProcess(shared_ptr<Process> process);
+    bool step();                                       // Execute one time unit
+    void run();                                        // Run to completion
+    
+    // Algorithm configuration
+    void setLastQueueAlgorithm(LastQueueAlgorithm alg);
+    void setBoostInterval(int interval);
+    
+    // Statistics and metrics
+    SchedulerStats getStats() const;
+    void displayStats() const;
+    void exportToCSV(const string& filename) const;
+    
+    // State access
+    const vector<ProcessQueue>& getQueues() const;
+    shared_ptr<Process> getCurrentProcess() const;
+    int getCurrentTime() const;
+};
+```
+
+### Process Control Block
+
+```cpp
+enum class ProcessState {
+    NEW,         // Just created
+    READY,       // In ready queue
+    RUNNING,     // Currently executing
+    TERMINATED   // Completed execution
+};
+
+class Process {
+private:
+    int pid;                    // Process ID
+    int arrivalTime;           // When process arrives
+    int burstTime;             // Total CPU time needed
+    int remainingTime;         // CPU time left
+    int completionTime;        // When process finished
+    int waitTime;              // Time spent waiting
+    int turnaroundTime;        // Total time in system
+    int responseTime;          // Time to first CPU access
+    int firstResponseTime;     // When first got CPU
+    ProcessState state;        // Current state
+    int currentQueue;          // Which queue process is in
+    int quantumUsed;           // Time used in current quantum
+    
+public:
+    // Constructor
+    Process(int id, int arrival, int burst);
+    
+    // Execution
+    bool execute(int timeSlice);           // Run for time slice
+    void setState(ProcessState newState);
+    
+    // Metrics calculation
+    void calculateMetrics();
+    
+    // Getters
+    int getPid() const { return pid; }
+    int getArrivalTime() const { return arrivalTime; }
+    int getBurstTime() const { return burstTime; }
+    int getRemainingTime() const { return remainingTime; }
+    ProcessState getState() const { return state; }
+    // ... other getters
+};
+```
+
+### Queue Management
+
+```cpp
+class ProcessQueue {
+private:
+    queue<shared_ptr<Process>> processes;
+    int queueLevel;            // Priority level (0 = highest)
+    int timeQuantum;           // Time slice for this queue
+    
+public:
+    ProcessQueue(int level, int quantum);
+    
+    void enqueue(shared_ptr<Process> process);
+    shared_ptr<Process> dequeue();
+    shared_ptr<Process> front() const;
+    
+    bool isEmpty() const;
+    size_t size() const;
+    int getTimeQuantum() const;
+    int getQueueLevel() const;
+    
+    // Round-robin support
+    void roundRobin();
+    
+    // Queue-specific algorithms
+    shared_ptr<Process> shortestJobFirst();
+    shared_ptr<Process> priorityScheduling();
+};
+```
+
+## Algorithm Details
+
+### MLFQ Rules Implementation
+
+1. **Rule 1**: If Priority(A) > Priority(B), A runs (B doesn't)
+2. **Rule 2**: If Priority(A) = Priority(B), A & B run in round-robin
+3. **Rule 3**: When a job enters the system, it is placed at the highest priority
+4. **Rule 4a**: If a job uses up its time slice, its priority is reduced
+5. **Rule 4b**: If a job gives up the CPU before the time slice is up, it stays at the same priority level
+6. **Rule 5**: After some time period S, move all the jobs to the topmost queue (priority boost)
+
+### Time Quantum Progression
+
+```cpp
+// Default quantum progression: 1, 2, 4, 8, 16, ...
+int SchedulerConfig::getQuantumForQueue(int queueLevel) const {
+    if (queueLevel >= quantums.size()) {
+        // Use exponential progression for higher queues
+        return static_cast<int>(baseQuantum * pow(quantumMultiplier, queueLevel));
+    }
+    return quantums[queueLevel];
+}
+```
+
+### Priority Boost (Aging)
+
+```cpp
+void MLFQScheduler::priorityBoost() {
+    if (boostInterval <= 0) return;  // Boost disabled
+    
+    boostTimer++;
+    if (boostTimer >= boostInterval) {
+        // Move all processes to highest priority queue
+        for (int i = 1; i < numQueues; i++) {
+            while (!readyQueues[i].isEmpty()) {
+                auto process = readyQueues[i].dequeue();
+                process->setCurrentQueue(0);
+                readyQueues[0].enqueue(process);
+            }
+        }
+        boostTimer = 0;  // Reset timer
+    }
+}
+```
+
+### Last Queue Algorithms
+
+The lowest priority queue can use different scheduling algorithms:
+
+#### Round Robin (Default)
+```cpp
+shared_ptr<Process> ProcessQueue::roundRobin() {
+    if (isEmpty()) return nullptr;
+    
+    auto process = dequeue();
+    // Process will be re-enqueued after execution
+    return process;
+}
+```
+
+#### Shortest Job First
+```cpp
+shared_ptr<Process> ProcessQueue::shortestJobFirst() {
+    if (isEmpty()) return nullptr;
+    
+    // Find process with shortest remaining time
+    shared_ptr<Process> shortest = nullptr;
+    int minTime = INT_MAX;
+    
+    // Implementation details...
+    return shortest;
+}
+```
+
+#### Priority Scheduling with Aging
+```cpp
+shared_ptr<Process> ProcessQueue::priorityScheduling() {
+    if (isEmpty()) return nullptr;
+    
+    // Calculate dynamic priorities based on wait time
+    // Longer wait time = higher priority (aging)
+    // Implementation details...
+    return highestPriorityProcess;
+}
+```
+
+## Performance Metrics
+
+### Calculation Formulas
+
+```cpp
+struct SchedulerStats {
+    double avgWaitTime;        // Average time processes wait
+    double avgTurnaroundTime;  // Average total time in system
+    double avgResponseTime;    // Average time to first CPU access
+    double cpuUtilization;     // Percentage of CPU busy time
+    int totalProcesses;        // Total processes handled
+    int completedProcesses;    // Processes that finished
+    int currentTime;           // Current system time
+};
+
+// Calculations
+void MLFQScheduler::calculateStats() {
+    double totalWait = 0, totalTurnaround = 0, totalResponse = 0;
+    int completed = completedProcesses.size();
+    
+    for (const auto& process : completedProcesses) {
+        totalWait += process->getWaitTime();
+        totalTurnaround += process->getTurnaroundTime();
+        totalResponse += process->getResponseTime();
+    }
+    
+    stats.avgWaitTime = completed > 0 ? totalWait / completed : 0;
+    stats.avgTurnaroundTime = completed > 0 ? totalTurnaround / completed : 0;
+    stats.avgResponseTime = completed > 0 ? totalResponse / completed : 0;
+    
+    // CPU Utilization = (Total CPU Time) / (Total Elapsed Time)
+    int totalCpuTime = 0;
+    for (const auto& process : allProcesses) {
+        totalCpuTime += process->getBurstTime();
+    }
+    stats.cpuUtilization = currentTime > 0 ? 
+        (double)totalCpuTime / currentTime * 100 : 0;
+}
+```
+
+### Metric Definitions
+
+- **Wait Time**: Time spent in ready queues (not including execution time)
+  ```
+  Wait Time = Turnaround Time - Burst Time
+  ```
+
+- **Turnaround Time**: Total time from arrival to completion
+  ```
+  Turnaround Time = Completion Time - Arrival Time
+  ```
+
+- **Response Time**: Time from arrival to first CPU access
+  ```
+  Response Time = First CPU Access Time - Arrival Time
+  ```
+
+- **CPU Utilization**: Percentage of time CPU is busy
+  ```
+  CPU Utilization = (Total CPU Time / Total Elapsed Time) × 100
+  ```
+
+## Configuration System
+
+### SchedulerConfig Class
+
+```cpp
+class SchedulerConfig {
+public:
+    // Core parameters
+    int numQueues = 4;              // Number of priority queues
+    int boostInterval = 50;         // Priority boost frequency
+    int baseQuantum = 1;            // Base time quantum
+    double quantumMultiplier = 2.0; // Quantum progression factor
+    
+    // Queue-specific quantums
+    vector<int> quantums = {1, 2, 4, 8};
+    
+    // Algorithm selection
+    LastQueueAlgorithm lastQueueAlgorithm = LastQueueAlgorithm::ROUND_ROBIN;
+    
+    // Presets
+    static SchedulerConfig getDefaultConfig();
+    static SchedulerConfig getInteractiveConfig();
+    static SchedulerConfig getBatchConfig();
+    static SchedulerConfig getRealtimeConfig();
+    
+    // Validation
+    bool isValid() const;
+    void validate();
+    
+    // Display
+    void displayQuantums() const;
+    void displayConfig() const;
+};
+```
+
+### Configuration Presets
+
+#### Default Configuration
+- 4 queues with quantums [1, 2, 4, 8]
+- Priority boost every 50 time units
+- Round-robin in last queue
+
+#### Interactive Configuration
+- Shorter quantums for responsiveness
+- More frequent priority boosts
+- Optimized for interactive processes
+
+#### Batch Configuration
+- Longer quantums for throughput
+- Less frequent priority boosts
+- Optimized for CPU-intensive tasks
+
+#### Real-time Configuration
+- Very short quantums
+- Frequent priority boosts
+- Strict timing requirements
+
+## Web Interface Implementation
+
+### JavaScript MLFQ Engine
+
+The web interface includes a complete JavaScript implementation of the MLFQ algorithm that mirrors the C++ version:
+
+```javascript
+class MLFQWebInterface {
+    constructor() {
+        this.queues = [];
+        this.processes = [];
+        this.currentTime = 0;
+        this.boostTimer = 0;
+        this.config = {
+            numQueues: 4,
+            quantums: [1, 2, 4, 8],
+            boostInterval: 50,
+            lastQueueAlgorithm: 'roundRobin'
+        };
+        this.initializeQueues();
+    }
+    
+    step() {
+        // Identical logic to C++ implementation
+        this.handleArrivals();
+        this.executeCurrentProcess();
+        this.updateMetrics();
+        this.checkPriorityBoost();
+        this.updateDisplay();
+    }
+    
+    // ... other methods mirror C++ implementation
+}
+```
+
+### Real-time Visualization
+
+The web interface provides:
+
+1. **Queue Visualization**: Shows individual process IDs in each queue
+2. **Process Table**: Real-time updates of process states and metrics
+3. **Performance Dashboard**: Live calculation of scheduling metrics
+4. **Interactive Controls**: Start, pause, step, reset functionality
+5. **Configuration Panel**: Adjust parameters and see immediate effects
+
+### Synchronization with C++ Backend
+
+Both implementations use identical:
+- Algorithm logic and decision-making
+- Time quantum progression
+- Priority boost mechanisms
+- Performance metric calculations
+- Process state management
+
+This ensures educational consistency between interfaces.
+
+## Testing and Validation
+
+### Unit Tests
+
+```cpp
+// Test process creation and basic operations
+void testProcessCreation();
+void testQueueOperations();
+void testSchedulerBasics();
+
+// Test algorithm correctness
+void testMLFQRules();
+void testPriorityBoost();
+void testLastQueueAlgorithms();
+
+// Test performance metrics
+void testMetricCalculations();
+void testEdgeCases();
+```
+
+### Integration Tests
+
+- Cross-platform compatibility (Linux, macOS, Windows)
+- Web interface consistency with C++ backend
+- Performance testing with large process sets
+- Algorithm comparison validation
+
+### Validation Methods
+
+1. **Textbook Verification**: Results match standard MLFQ examples
+2. **Cross-Implementation Consistency**: C++ and JavaScript produce identical results
+3. **Edge Case Testing**: Handle empty queues, single processes, etc.
+4. **Performance Validation**: Metrics calculations are mathematically correct
+
+## Build System and Dependencies
+
+### CMake Configuration
+
+```cmake
+cmake_minimum_required(VERSION 3.10)
+project(MLFQ_Scheduler VERSION 1.0)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Optional FLTK support
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(FLTK QUIET fltk1.3 fltk)
+
+# Core sources
+set(CORE_SOURCES
+    src/Process.cpp
+    src/Queue.cpp
+    src/MLFQScheduler.cpp
+    src/Visualizer.cpp
+    src/WebServer.cpp
+)
+
+# Conditional FLTK compilation
+if(FLTK_FOUND)
+    add_compile_definitions(FLTK_AVAILABLE)
+    set(ALL_SOURCES ${CORE_SOURCES} src/FLTKVisualizer.cpp src/main.cpp)
+    add_executable(mlfq_scheduler ${ALL_SOURCES})
+    target_link_libraries(mlfq_scheduler ${FLTK_LIBRARIES})
+else()
+    add_executable(mlfq_scheduler ${CORE_SOURCES} src/main.cpp)
+endif()
+
+# Test executable
+add_executable(test_scheduler ${CORE_SOURCES} tests/test_scheduler.cpp)
+```
+
+### Dependencies
+
+#### Required
+- C++17 compatible compiler (GCC 7+, Clang 5+, MSVC 2017+)
+- CMake 3.10+
+- Standard C++ library
+
+#### Optional
+- FLTK 1.3+ (for GUI interface)
+- Modern web browser (for web interface)
+
+#### No External Dependencies
+- Web server is built-in (no Apache/Nginx needed)
+- All algorithms implemented from scratch
+- Cross-platform socket programming
+
+## Performance Characteristics
+
+### Time Complexity
+- **Process Addition**: O(1)
+- **Single Step Execution**: O(n) where n is number of processes
+- **Queue Operations**: O(1) for enqueue/dequeue
+- **Priority Boost**: O(n) where n is total processes
+- **Shortest Job First**: O(n) for last queue selection
+
+### Space Complexity
+- **Process Storage**: O(n) where n is number of processes
+- **Queue Storage**: O(n) distributed across priority levels
+- **Execution Log**: O(t) where t is total execution time
+- **Statistics**: O(1) for metric storage
+
+### Scalability
+- Handles hundreds of processes efficiently
+- Real-time visualization up to ~50 processes
+- Memory usage scales linearly with process count
+- Web interface optimized for educational use (not production scale)
+
+## Future Enhancements
+
+### Potential Improvements
+1. **Multi-core MLFQ**: Simulate multiple CPU cores
+2. **Process Migration**: Dynamic load balancing between cores
+3. **Advanced Metrics**: Cache hit rates, context switch overhead
+4. **Mobile Interface**: Responsive design for tablets/phones
+5. **Export Capabilities**: PDF reports, CSV data export
+6. **Animation Controls**: Slow motion, replay functionality
+
+### Architecture Extensions
+1. **Plugin System**: Custom scheduling algorithms
+2. **Network Simulation**: Distributed MLFQ across nodes
+3. **Real-time Integration**: Interface with actual OS scheduler
+4. **Machine Learning**: Adaptive parameter tuning
+
+This technical documentation provides a comprehensive overview of the MLFQ scheduler implementation, covering both the algorithmic details and the software engineering aspects that make it an effective educational tool.## Core Classes
 
 ### 1. Process Class
 

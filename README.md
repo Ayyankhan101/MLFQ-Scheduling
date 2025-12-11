@@ -30,32 +30,61 @@ cd build && ./mlfq_scheduler
 - **🎛️ Configurable Parameters**: Adjust quantum times, boost intervals, queue counts
 - **📈 Educational Tools**: Step-by-step execution and detailed explanations
 
-## 🖥️ Screenshots
+## 🖥️ Interface Options
 
-### Web Interface
-Beautiful, interactive visualization that runs in any modern browser.
+### Web Interface (Recommended)
+Modern, interactive visualization that runs in any browser with:
+- Real-time queue animations
+- Professional design with smooth transitions
+- Interactive process management
+- Performance metrics dashboard
+- Multiple preset process sets
+- Step-by-step simulation control
 
 ### Terminal Interface  
-Step-by-step execution perfect for understanding the algorithm.
+Command-line interface perfect for understanding the algorithm:
+- Step-by-step execution mode
+- Detailed scheduler decision output
+- Comprehensive performance statistics
+- Gantt chart visualization
+- Algorithm comparison tools
+
+### FLTK GUI (Optional)
+Native desktop application with:
+- Cross-platform compatibility
+- Fast rendering for large simulations
+- Traditional desktop interface
+- Real-time process monitoring
 
 ## 🏗️ Architecture
 
 ```
-├── src/           # Core C++ implementation
-│   ├── MLFQScheduler.cpp    # Core MLFQ algorithm
-│   ├── WebServer.cpp        # Built-in HTTP server for web GUI
-│   └── ...                 # Other C++ source files
-├── include/       # Header files
-│   ├── MLFQScheduler.h      # MLFQ scheduler definition
-│   ├── WebServer.h          # Web server interface
-│   └── ...                 # Other header files
-├── web_gui/       # Web interface (HTML/CSS/JS)
+MLFQ-Scheduling/
+├── src/                    # Core C++ implementation
+│   ├── MLFQScheduler.cpp   # Core MLFQ algorithm
+│   ├── WebServer.cpp       # Built-in HTTP server
+│   ├── main.cpp            # Main program with menu system
+│   ├── Process.cpp         # Process control block
+│   ├── Queue.cpp           # Queue management
+│   ├── Visualizer.cpp      # Terminal visualization
+│   └── FLTKVisualizer.cpp  # GUI visualization (optional)
+├── include/                # Header files
+│   ├── MLFQScheduler.h     # MLFQ scheduler definition
+│   ├── SchedulerConfig.h   # Configuration management
+│   ├── Process.h           # Process definition
+│   └── ...                 # Other headers
+├── web_gui/                # Web interface
 │   ├── index.html          # Main web interface
 │   ├── script.js           # JavaScript MLFQ implementation
-│   └── styles.css          # Styling
-├── docs/          # Comprehensive documentation
-├── tests/         # Unit tests
-└── build/         # Compiled binaries
+│   └── styles.css          # Professional styling
+├── tests/                  # Unit tests
+│   └── test_scheduler.cpp  # Comprehensive test suite
+├── docs/                   # Documentation
+│   ├── QUICKSTART.md       # 5-minute setup guide
+│   ├── TECHNICAL.md        # Implementation details
+│   ├── PROJECT_SUMMARY.md  # Learning journey
+│   └── CONFIGURATION_GUIDE.md # Parameter tuning
+└── build/                  # Compiled binaries
 ```
 
 ## 🌐 Web GUI Architecture
@@ -167,4 +196,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Contact
 
 If you have questions about the implementation or find this useful for learning, feel free to reach out!
-

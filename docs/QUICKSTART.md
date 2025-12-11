@@ -3,8 +3,8 @@
 ## TL;DR - Just Want to See It Work?
 
 ```bash
-git clone <your-repo>
-cd END-SEM
+git clone https://github.com/Ayyankhan101/MLFQ-Scheduling.git
+cd MLFQ-Scheduling
 ./build_web.sh
 cd build && ./mlfq_scheduler
 # Choose option 5, then open http://localhost:8080
@@ -15,7 +15,7 @@ Done! You should see the web interface with a beautiful MLFQ visualization.
 ## First Time Setup
 
 ### What You Need
-- Any modern Linux system (I developed this on Ubuntu)
+- Any modern Linux system (developed on Ubuntu)
 - GCC with C++17 support (most recent versions work fine)
 - A web browser (Chrome, Firefox, Safari - anything modern)
 
@@ -47,13 +47,15 @@ If you see "Build successful!" at the end, you're good to go. If not, check that
    - Don't worry if it takes a second to load
 
 4. **Load some processes:**
-   - Click the "Config" button
-   - Go to "Preset Sets" tab
-   - Click "Basic Set (4 processes)"
-   - This gives you a nice starter set to play with
+   - Click the "📋 Preset Processes" button
+   - Choose from 4 different preset sets:
+     - **Standard Set**: Mixed workload (5 processes)
+     - **CPU-Intensive**: Long-running processes (3 processes)
+     - **I/O-Intensive**: Short processes (5 processes)
+     - **Mixed Workload**: Combination of short and long (7 processes)
 
 5. **Start the simulation:**
-   - Click "Start Simulation"
+   - Click "▶️ Start Simulation"
    - Watch the magic happen!
 
 ## What You're Seeing
@@ -65,7 +67,7 @@ Those colored boxes represent your priority queues:
 - **Queue 2 (yellow)**: Lower priority, quantum = 4
 - **Queue 3 (red)**: Lowest priority, quantum = 8
 
-Processes move between these queues based on how much CPU time they use.
+Processes move between these queues based on how much CPU time they use. You'll see individual process IDs (P1, P2, etc.) displayed in each queue.
 
 ### The Process Table
 This shows every process and its current state:
@@ -85,12 +87,18 @@ The dashboard on the right shows:
 - **CPU Utilization**: Percentage of time the CPU is busy
 - **Throughput**: Processes completed per time unit
 
+### Priority Boost Information
+Watch the boost timer count down in real-time:
+- **Last Boost**: When the last priority boost occurred
+- **Next Boost**: Countdown to the next boost
+- **Boost Interval**: How often boosts happen (configurable)
+
 ## Try These Experiments
 
 ### Experiment 1: Different Process Sets
-- Try the "Mixed Workload" preset
-- Notice how different arrival times and burst times affect the results
-- The "Heavy Load" preset is fun if you want to see lots of action
+- Try the "CPU-Intensive" preset to see long-running processes
+- Notice how they get demoted to lower priority queues
+- The "I/O-Intensive" preset shows how short processes stay in high-priority queues
 
 ### Experiment 2: Algorithm Switching
 - Go to Config → Algorithm tab
@@ -98,7 +106,7 @@ The dashboard on the right shows:
 - Run the same process set again
 - See how the completion order changes!
 
-### Experiment 3: Boost Priority
+### Experiment 3: Priority Boost
 - Try turning off "Priority Boost (Aging)"
 - Run a simulation with some long processes
 - Notice how they might get "starved" without the boost
@@ -108,6 +116,11 @@ The dashboard on the right shows:
 - Use the speed slider to slow things down
 - At 1x speed, you can really see what's happening step by step
 - At 10x speed, you can run longer simulations quickly
+
+### Experiment 5: Step-by-Step Mode
+- Use the "⏭️ Step" button to advance one time unit at a time
+- Perfect for understanding exactly how the algorithm makes decisions
+- Watch processes move between queues with precise timing
 
 ## Terminal Interface (For the Curious)
 
@@ -133,10 +146,13 @@ A: That's probably correct! MLFQ prioritizes interactive (short) processes over 
 A: It prevents starvation. Every so often, all processes get moved back to the highest priority queue for a "second chance."
 
 **Q: Can I create my own processes?**
-A: Absolutely! Use Config → Custom Set or Random Generator to create your own scenarios.
+A: Absolutely! Use the "➕ Add Process" button or "🎲 Random Processes" to create your own scenarios.
 
 **Q: The numbers don't match my textbook**
 A: Different textbooks use slightly different MLFQ variants. This implementation follows the classic Silberschatz approach.
+
+**Q: Why do I see process IDs in the queues?**
+A: This is a recent improvement! Instead of just showing "3 processes", you now see "P1 P3 P5" so you can track individual processes.
 
 ## Next Steps
 
