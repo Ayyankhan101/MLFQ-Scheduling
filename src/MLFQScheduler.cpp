@@ -55,11 +55,11 @@ void MLFQScheduler::addProcess(shared_ptr<Process> process)
     }
 }
 
-void MLFQScheduler::checkNewArrivals() 
+void MLFQScheduler::checkNewArrivals()
 {
-    for (auto& process : allProcesses) 
+    for (auto& process : allProcesses)
     {
-        if (process->getArrivalTime() == currentTime && process->getState() == ProcessState::NEW) 
+        if (process->getArrivalTime() <= currentTime && process->getState() == ProcessState::NEW)
         {
             process->setState(ProcessState::READY);  // Set to READY when entering queue
             process->setQueueEnterTime(currentTime);

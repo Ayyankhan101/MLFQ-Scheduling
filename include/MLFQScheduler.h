@@ -54,7 +54,6 @@ private:
     void updateWaitTimes();
     shared_ptr<Process> selectNextProcess();
     shared_ptr<Process> selectNextProcessForLastQueue();  // Select based on algorithm
-    void checkNewArrivals();
 
 public:
     // Algorithm selection methods
@@ -104,6 +103,9 @@ public:
 
     // Update configuration - note: this resets the scheduler with new parameters
     void updateConfig(const SchedulerConfig& newConfig);
+
+    // Public method to check for newly arriving processes
+    void checkNewArrivals();
 
 
 };

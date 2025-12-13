@@ -260,7 +260,10 @@ void WebServer::handleClient(int clientSocket) {
                 scheduler->addProcess(15, 16);
                 scheduler->addProcess(20, 5);
         }
-        
+
+        // Check for new arrivals to properly update process queues
+        scheduler->checkNewArrivals();
+
         response = "HTTP/1.1 200 OK\r\n";
         response += "Content-Type: application/json\r\n";
         response += "Access-Control-Allow-Origin: *\r\n";
@@ -268,12 +271,88 @@ void WebServer::handleClient(int clientSocket) {
         response += "\r\n";
         response += "{\"success\":true}";
     } else if (request.find("POST /api/random") != string::npos) {
-        // Add random processes
-        srand(time(nullptr));
-        for (int i = 0; i < 5; i++) {
-            scheduler->addProcess(rand() % 10, (rand() % 15) + 1);
+        // Parse POST data for random process parameters
+        size_t bodyStart = request.find("\r\n\r\n");
+
+        // Set default values
+        int count = 5;         // default number of processes
+        int maxArrival = 10;   // default max arrival time
+        int minBurst = 1;      // default min burst time
+        int maxBurst = 15;     // default max burst time
+
+        if (bodyStart != string::npos) {
+            string body = request.substr(bodyStart + 4);
+
+            // Parse all parameters from the body
+
+            // Split the body by '&' to get individual parameters
+            stringstream ss(body);
+            string item;
+            while(getline(ss, item, '&')) {
+                size_t eqPos = item.find('=');
+                if (eqPos != string::npos) {
+                    string key = item.substr(0, eqPos);
+                    string value = item.substr(eqPos + 1);
+
+                    if (key == "count") {
+                        try {
+                            count = stoi(value);
+                            // Clamp count to a reasonable range
+                            if (count < 1) count = 1;
+                            if (count > 50) count = 50;
+                        } catch (...) {
+                            // Keep default value if conversion fails
+                        }
+                    } else if (key == "maxArrival") {
+                        try {
+                            maxArrival = stoi(value);
+                            // Clamp max arrival to a reasonable range
+                            if (maxArrival < 0) maxArrival = 0;
+                            if (maxArrival > 100) maxArrival = 100;
+                        } catch (...) {
+                            // Keep default value if conversion fails
+                        }
+                    } else if (key == "minBurst") {
+                        try {
+                            minBurst = stoi(value);
+                            // Clamp min burst to a reasonable range
+                            if (minBurst < 1) minBurst = 1;
+                            if (minBurst > 50) minBurst = 50;
+                        } catch (...) {
+                            // Keep default value if conversion fails
+                        }
+                    } else if (key == "maxBurst") {
+                        try {
+                            maxBurst = stoi(value);
+                            // Clamp max burst to a reasonable range
+                            if (maxBurst < 1) maxBurst = 1;
+                            if (maxBurst > 100) maxBurst = 100;
+                        } catch (...) {
+                            // Keep default value if conversion fails
+                        }
+                    }
+                }
+            }
         }
-        
+
+        // Validate minBurst <= maxBurst
+        if (minBurst > maxBurst) {
+            int temp = minBurst;
+            minBurst = maxBurst;
+            maxBurst = temp;
+        }
+
+        // Add random processes with the user-specified parameters
+        srand(time(nullptr));
+        for (int i = 0; i < count; i++) {
+            int arrival = rand() % (maxArrival + 1);  // 0 to maxArrival
+            int burst = (rand() % (maxBurst - minBurst + 1)) + minBurst;  // minBurst to maxBurst
+            scheduler->addProcess(arrival, burst);
+        }
+
+        // Check for new arrivals to properly update process queues
+        scheduler->checkNewArrivals();
+
         response = "HTTP/1.1 200 OK\r\n";
         response += "Content-Type: application/json\r\n";
         response += "Access-Control-Allow-Origin: *\r\n";
@@ -310,6 +389,10 @@ void WebServer::handleClient(int clientSocket) {
                 scheduler->addProcess(arrival, burst);
             }
         }
+
+        // Check for new arrivals to properly update process queues
+        scheduler->checkNewArrivals();
+
         response = "HTTP/1.1 200 OK\r\n";
         response += "Content-Type: application/json\r\n";
         response += "Access-Control-Allow-Origin: *\r\n";
@@ -326,8 +409,6 @@ void WebServer::handleClient(int clientSocket) {
             SchedulerConfig newConfig = scheduler->getConfig();
 
             // Parse all configuration parameters
-            size_t pos = 0;
-            string param;
             bool boostEnabled = true; // Default is enabled
 
             // Split the body by '&' to get individual parameters

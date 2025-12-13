@@ -218,15 +218,6 @@ class MLFQWebInterface {
         document.getElementById('add-process-modal').style.display = 'block';
     }
 
-    async confirmPreset() {
-        try {
-            await fetch('/api/preset', { method: 'POST' });
-            this.closePreset();
-            this.updateDisplay();
-        } catch (e) {
-            console.log('Load preset failed');
-        }
-    }
 
     async loadPresetSet(setNumber) {
         try {
@@ -255,7 +246,17 @@ class MLFQWebInterface {
 
     async confirmRandom() {
         try {
-            await fetch('/api/random', { method: 'POST' });
+            const count = document.getElementById('random-count').value;
+            const maxArrival = document.getElementById('random-max-arrival').value;
+            const minBurst = document.getElementById('random-min-burst').value;
+            const maxBurst = document.getElementById('random-max-burst').value;
+
+            const response = await fetch('/api/random', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `count=${count}&maxArrival=${maxArrival}&minBurst=${minBurst}&maxBurst=${maxBurst}`
+            });
+
             // Re-enable buttons after loading processes
             document.getElementById('step-btn').disabled = false;
             document.getElementById('start-btn').disabled = false;
@@ -347,10 +348,6 @@ function addNewProcess() {
 
 function closeAddProcess() {
     window.mlfqInterface.closeAddProcess();
-}
-
-function confirmPreset() {
-    window.mlfqInterface.confirmPreset();
 }
 
 function selectPreset(setNumber) {
