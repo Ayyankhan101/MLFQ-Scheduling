@@ -66,12 +66,14 @@ void WebServer::start()
         
         cout << "Web server started on http://localhost:" << port << "\n";
         
-        while (running.load()) {
+        while (running.load()) 
+        {
             sockaddr_in clientAddr{};
             socklen_t clientLen = sizeof(clientAddr);
             int clientSocket = accept(serverSocket, (sockaddr*)&clientAddr, &clientLen);
             
-            if (clientSocket >= 0) {
+            if (clientSocket >= 0) 
+            {
                 handleClient(clientSocket);
                 close(clientSocket);
             }
@@ -81,23 +83,28 @@ void WebServer::start()
     });
 }
 
-void WebServer::stop() {
+void WebServer::stop() 
+{
     running.store(false);
-    if (serverThread.joinable()) {
+    if (serverThread.joinable()) 
+    {
         serverThread.join();
     }
 }
 
-void WebServer::handleClient(int clientSocket) {
+void WebServer::handleClient(int clientSocket) 
+{
     char buffer[4096] = {0};
     read(clientSocket, buffer, sizeof(buffer));
     
     string request(buffer);
     string response;
     
-    if (request.find("GET / ") != string::npos) {
+    if (request.find("GET / ") != string::npos) 
+    {
         ifstream file("../web_gui/index.html");
-        if (file.is_open()) {
+        if (file.is_open()) 
+        {
             stringstream ss;
             ss << file.rdbuf();
             string content = ss.str();
@@ -163,20 +170,33 @@ void WebServer::handleClient(int clientSocket) {
         response += "Content-Length: " + to_string(json.length()) + "\r\n";
         response += "\r\n";
         response += json;
-    } else if (request.find("GET /api/processes") != string::npos) {
-        string json = "{\"processes\":[";
+    } 
+    else if (request.find("GET /api/processes") != string::npos) 
+    {
+        string json = "{";
+        auto currentProcess = scheduler->getCurrentProcess();
+        if (currentProcess && currentProcess->getState() == ProcessState::RUNNING) 
+        {
+            json += "\"currentRunningPid\":" + to_string(currentProcess->getPid()) + ",";
+        } 
+        else 
+        {
+            json += "\"currentRunningPid\":null,";
+        }
+        json += "\"processes\":[";
         auto processes = scheduler->getAllProcesses();
         for (size_t i = 0; i < processes.size(); i++) {
             auto p = processes[i];
             string status = "Ready";
             if (p->getState() == ProcessState::TERMINATED) status = "Completed";
             else if (p->getState() == ProcessState::RUNNING) status = "Running";
-            
+
             json += "{\"pid\":" + to_string(p->getPid()) +
                    ",\"arrival\":" + to_string(p->getArrivalTime()) +
                    ",\"burst\":" + to_string(p->getBurstTime()) +
                    ",\"remaining\":" + to_string(p->getRemainingTime()) +
                    ",\"queue\":" + to_string(p->getPriority()) +
+                   ",\"completion\":" + to_string(p->getCompletionTime()) +
                    ",\"status\":\"" + status + "\"}";
             if (i < processes.size() - 1) json += ",";
         }
@@ -224,7 +244,8 @@ void WebServer::handleClient(int clientSocket) {
         }
         
         // Load different preset sets based on setNumber
-        switch(setNumber) {
+        switch(setNumber) 
+        {
             case 1: // Standard Set
                 scheduler->addProcess(0, 20);
                 scheduler->addProcess(5, 12);
@@ -253,6 +274,36 @@ void WebServer::handleClient(int clientSocket) {
                 scheduler->addProcess(10, 5);
                 scheduler->addProcess(12, 7);
                 break;
+            case 5: // Mixed Workload: Mix of short and long processes
+                scheduler->addProcess(0, 5);
+                scheduler->addProcess(2, 30);
+                scheduler->addProcess(4, 10);
+                scheduler->addProcess(6, 45);
+                scheduler->addProcess(8, 2);
+                break;
+            case 6: // Simultaneous Arrival: All processes arrive at the same time
+                scheduler->addProcess(0, 10);
+                scheduler->addProcess(0, 5);
+                scheduler->addProcess(0, 20);
+                scheduler->addProcess(0, 3);
+                scheduler->addProcess(0, 15);
+                break;
+            case 7: // Gradual Buildup: Increasing number of processes over time
+                scheduler->addProcess(0, 10);
+                scheduler->addProcess(1, 9);
+                scheduler->addProcess(3, 8);
+                scheduler->addProcess(6, 7);
+                scheduler->addProcess(10, 6);
+                scheduler->addProcess(15, 5);
+                break;
+            case 8: // Priority Test: Processes with clear priority distinctions (MLFQS usually handles this via feedback)
+                // Assuming MLFQS handles priority implicitly; here we use arrival/burst times to influence the scheduler's behavior
+                scheduler->addProcess(0, 5);  
+                scheduler->addProcess(0, 50); 
+                scheduler->addProcess(1, 10);
+                scheduler->addProcess(2, 40);
+                scheduler->addProcess(3, 3);
+                break;
             default: // Default to Standard Set
                 scheduler->addProcess(0, 20);
                 scheduler->addProcess(5, 12);
@@ -270,7 +321,9 @@ void WebServer::handleClient(int clientSocket) {
         response += "Content-Length: 15\r\n";
         response += "\r\n";
         response += "{\"success\":true}";
-    } else if (request.find("POST /api/random") != string::npos) {
+    } 
+    else if (request.find("POST /api/random") != string::npos) 
+    {
         // Parse POST data for random process parameters
         size_t bodyStart = request.find("\r\n\r\n");
 
@@ -280,7 +333,8 @@ void WebServer::handleClient(int clientSocket) {
         int minBurst = 1;      // default min burst time
         int maxBurst = 15;     // default max burst time
 
-        if (bodyStart != string::npos) {
+        if (bodyStart != string::npos) 
+        {
             string body = request.substr(bodyStart + 4);
 
             // Parse all parameters from the body
@@ -288,41 +342,60 @@ void WebServer::handleClient(int clientSocket) {
             // Split the body by '&' to get individual parameters
             stringstream ss(body);
             string item;
-            while(getline(ss, item, '&')) {
+            while(getline(ss, item, '&')) 
+            {
                 size_t eqPos = item.find('=');
-                if (eqPos != string::npos) {
+                if (eqPos != string::npos) 
+                {
                     string key = item.substr(0, eqPos);
                     string value = item.substr(eqPos + 1);
 
-                    if (key == "count") {
-                        try {
+                    if (key == "count") 
+                    {
+                        try 
+                        {
                             count = stoi(value);
                             // Clamp count to a reasonable range
                             if (count < 1) count = 1;
                             if (count > 50) count = 50;
-                        } catch (...) {
+                        } 
+                        catch (...) 
+                        {
                             // Keep default value if conversion fails
                         }
-                    } else if (key == "maxArrival") {
-                        try {
+                    } 
+                    else if (key == "maxArrival") 
+                    {
+                        try 
+                        {
                             maxArrival = stoi(value);
                             // Clamp max arrival to a reasonable range
                             if (maxArrival < 0) maxArrival = 0;
                             if (maxArrival > 100) maxArrival = 100;
-                        } catch (...) {
+                        } 
+                        catch (...) 
+                        {
                             // Keep default value if conversion fails
                         }
-                    } else if (key == "minBurst") {
-                        try {
+                    } 
+                    else if (key == "minBurst") 
+                    {
+                        try 
+                        {
                             minBurst = stoi(value);
                             // Clamp min burst to a reasonable range
                             if (minBurst < 1) minBurst = 1;
                             if (minBurst > 50) minBurst = 50;
-                        } catch (...) {
+                        } 
+                        catch (...) 
+                        {
                             // Keep default value if conversion fails
                         }
-                    } else if (key == "maxBurst") {
-                        try {
+                    } 
+                    else if (key == "maxBurst") 
+                    {
+                        try 
+                        {
                             maxBurst = stoi(value);
                             // Clamp max burst to a reasonable range
                             if (maxBurst < 1) maxBurst = 1;
@@ -336,7 +409,8 @@ void WebServer::handleClient(int clientSocket) {
         }
 
         // Validate minBurst <= maxBurst
-        if (minBurst > maxBurst) {
+        if (minBurst > maxBurst) 
+        {
             int temp = minBurst;
             minBurst = maxBurst;
             maxBurst = temp;
@@ -344,7 +418,8 @@ void WebServer::handleClient(int clientSocket) {
 
         // Add random processes with the user-specified parameters
         srand(time(nullptr));
-        for (int i = 0; i < count; i++) {
+        for (int i = 0; i < count; i++) 
+        {
             int arrival = rand() % (maxArrival + 1);  // 0 to maxArrival
             int burst = (rand() % (maxBurst - minBurst + 1)) + minBurst;  // minBurst to maxBurst
             scheduler->addProcess(arrival, burst);
@@ -359,7 +434,9 @@ void WebServer::handleClient(int clientSocket) {
         response += "Content-Length: 15\r\n";
         response += "\r\n";
         response += "{\"success\":true}";
-    } else if (request.find("POST /api/step") != string::npos) {
+    } 
+    else if (request.find("POST /api/step") != string::npos) 
+    {
         scheduler->step();
         response = "HTTP/1.1 200 OK\r\n";
         response += "Content-Type: application/json\r\n";
@@ -367,7 +444,9 @@ void WebServer::handleClient(int clientSocket) {
         response += "Content-Length: 15\r\n";
         response += "\r\n";
         response += "{\"success\":true}";
-    } else if (request.find("POST /api/reset") != string::npos) {
+    }
+     else if (request.find("POST /api/reset") != string::npos) 
+     {
         scheduler->reset();
         response = "HTTP/1.1 200 OK\r\n";
         response += "Content-Type: application/json\r\n";
@@ -375,15 +454,20 @@ void WebServer::handleClient(int clientSocket) {
         response += "Content-Length: 15\r\n";
         response += "\r\n";
         response += "{\"success\":true}";
-    } else if (request.find("POST /api/add-process") != string::npos) {
+    } 
+    else if (request.find("POST /api/add-process") != string::npos) 
+    {
         // Parse POST data for arrival and burst time
         size_t bodyStart = request.find("\r\n\r\n");
-        if (bodyStart != string::npos) {
+        if (bodyStart != string::npos) 
+        {
             string body = request.substr(bodyStart + 4);
+
             // Simple parsing - expect "arrival=X&burst=Y"
             size_t arrivalPos = body.find("arrival=");
             size_t burstPos = body.find("burst=");
-            if (arrivalPos != string::npos && burstPos != string::npos) {
+            if (arrivalPos != string::npos && burstPos != string::npos) 
+            {
                 int arrival = stoi(body.substr(arrivalPos + 8, body.find("&", arrivalPos) - arrivalPos - 8));
                 int burst = stoi(body.substr(burstPos + 6));
                 scheduler->addProcess(arrival, burst);
@@ -399,10 +483,13 @@ void WebServer::handleClient(int clientSocket) {
         response += "Content-Length: 15\r\n";
         response += "\r\n";
         response += "{\"success\":true}";
-    } else if (request.find("POST /api/config") != string::npos) {
+    }
+     else if (request.find("POST /api/config") != string::npos) 
+     {
         // Parse POST data for configuration
         size_t bodyStart = request.find("\r\n\r\n");
-        if (bodyStart != string::npos) {
+        if (bodyStart != string::npos) 
+        {
             string body = request.substr(bodyStart + 4);
 
             // Create default config based on current settings
@@ -414,59 +501,108 @@ void WebServer::handleClient(int clientSocket) {
             // Split the body by '&' to get individual parameters
             stringstream ss(body);
             string item;
-            while(getline(ss, item, '&')) {
+            while(getline(ss, item, '&')) 
+            {
                 size_t eqPos = item.find('=');
-                if (eqPos != string::npos) {
+                if (eqPos != string::npos) 
+                {
                     string key = item.substr(0, eqPos);
                     string value = item.substr(eqPos + 1);
 
-                    if (key == "algorithm") {
-                        if (value == "sjf") {
+                    if (key == "algorithm") 
+                    {
+                        if (value == "sjf") 
+                        {
                             scheduler->setLastQueueAlgorithm(LastQueueAlgorithm::SHORTEST_JOB_FIRST);
                             cout << "New last queue algorithm: Shortest Job First" << endl;
-                        } else if (value == "priority") {
+                        } 
+                        else if (value == "priority") 
+                        {
                             scheduler->setLastQueueAlgorithm(LastQueueAlgorithm::PRIORITY_SCHEDULING);
                             cout << "New last queue algorithm: Priority Scheduling" << endl;
-                        } else {
+                        }
+                         else 
+                         {
                             scheduler->setLastQueueAlgorithm(LastQueueAlgorithm::ROUND_ROBIN);
                             cout << "New last queue algorithm: Round Robin" << endl;
                         }
-                    } else if (key == "boost") {
+                    } 
+                    else if (key == "boost") 
+                    {
                         // Handle the boost checkbox - if false, disable boost
-                        if (value == "false") {
+                        if (value == "false") 
+                        {
                             boostEnabled = false;
                         }
-                    } else if (key == "interval") {
-                        try {
+                    } 
+                    else if (key == "interval") 
+                    {
+                        try 
+                        {
                             newConfig.boostInterval = stoi(value);
-                        } catch (...) {
+                        }
+                         catch (...) 
+                         {
                             // Keep default value if conversion fails
                         }
-                    } else if (key == "numQueues") {
-                        try {
+                    }
+                     else if (key == "numQueues") 
+                     {
+                        try 
+                        {
                             newConfig.numQueues = stoi(value);
                             // Ensure the value is within valid range
                             if (newConfig.numQueues < 2) newConfig.numQueues = 2;
                             if (newConfig.numQueues > 5) newConfig.numQueues = 5;
-                        } catch (...) {
+                        }
+                         catch (...) 
+                         {
                             // Keep default value if conversion fails
                         }
-                    } else if (key == "baseQuantum") {
-                        try {
+                    } 
+                    else if (key == "baseQuantum") 
+                    {
+                        try 
+                        {
                             newConfig.baseQuantum = stoi(value);
                             // Ensure the value is within valid range
                             if (newConfig.baseQuantum < 1) newConfig.baseQuantum = 1;
                             if (newConfig.baseQuantum > 10) newConfig.baseQuantum = 10;
-                        } catch (...) {
+                        } 
+                        catch (...) 
+                        {
                             // Keep default value if conversion fails
                         }
-                    } else if (key == "quantumMultiplier") {
-                        try {
+                    } 
+                    else if (key == "quantumMultiplier")
+                    {
+                        try
+                        {
                             newConfig.quantumMultiplier = stod(value);
                             // Ensure the value is within valid range
                             if (newConfig.quantumMultiplier < 1.0) newConfig.quantumMultiplier = 1.0;
                             if (newConfig.quantumMultiplier > 5.0) newConfig.quantumMultiplier = 5.0;
-                        } catch (...) {
+                        }
+                         catch (...)
+                         {
+                            // Keep default value if conversion fails
+                        }
+                    }
+                    else if (key == "speed")
+                    {
+                        // Convert speed value (1-10) to animation delay (lower = faster)
+                        // Speed 1 = slowest (1000ms delay), Speed 10 = fastest (100ms delay)
+                        try
+                        {
+                            int speedValue = stoi(value);
+                            // Map speed (1-10) to animation delay (1000ms to 100ms)
+                            newConfig.animationDelay = 1100 - (speedValue * 100); // 1000 to 100
+                            // Ensure it's within valid range
+                            if (newConfig.animationDelay < 50) newConfig.animationDelay = 50;
+                            if (newConfig.animationDelay > 2000) newConfig.animationDelay = 2000;
+                        }
+                        catch (...)
+                        {
                             // Keep default value if conversion fails
                         }
                     }
@@ -474,7 +610,8 @@ void WebServer::handleClient(int clientSocket) {
             }
 
             // Apply the boost setting: if disabled, set interval to -1; otherwise use the interval
-            if (!boostEnabled) {
+            if (!boostEnabled) 
+            {
                 newConfig.boostInterval = -1; // Disable boost
             }
             // If boostEnabled is true, interval keeps its value from the "interval" parameter
@@ -489,7 +626,9 @@ void WebServer::handleClient(int clientSocket) {
         response += "Content-Length: 17\r\n";
         response += "\r\n";
         response += "{\"success\":true}";
-    } else {
+    } 
+    else 
+    {
         string content = "404 Not Found";
         response = "HTTP/1.1 404 Not Found\r\n";
         response += "Content-Type: text/plain\r\n";

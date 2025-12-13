@@ -62,7 +62,7 @@
                                 <th>Arrival</th>
                                 <th>Burst</th>
                                 <th>Remaining</th>
-                                <th>Queue</th>
+                                <th>Completion</th>
                                 <th>Status</th>
                             </tr>
                         </thead>
@@ -226,9 +226,59 @@
                             <li>P7: Arrival=12, Burst=7</li>
                         </ul>
                     </div>
+
+                    <div class="preset-option" onclick="selectPreset(5)">
+                        <h4>5. Mixed Workload (5 processes)</h4>
+                        <p>Mix of short and long processes</p>
+                        <ul>
+                            <li>P1: Arrival=0, Burst=5</li>
+                            <li>P2: Arrival=2, Burst=30</li>
+                            <li>P3: Arrival=4, Burst=10</li>
+                            <li>P4: Arrival=6, Burst=45</li>
+                            <li>P5: Arrival=8, Burst=2</li>
+                        </ul>
+                    </div>
+
+                    <div class="preset-option" onclick="selectPreset(6)">
+                        <h4>6. Simultaneous Arrival (5 processes)</h4>
+                        <p>All processes arrive at the same time</p>
+                        <ul>
+                            <li>P1: Arrival=0, Burst=10</li>
+                            <li>P2: Arrival=0, Burst=5</li>
+                            <li>P3: Arrival=0, Burst=20</li>
+                            <li>P4: Arrival=0, Burst=3</li>
+                            <li>P5: Arrival=0, Burst=15</li>
+                        </ul>
+                    </div>
+
+                    <div class="preset-option" onclick="selectPreset(7)">
+                        <h4>7. Gradual Buildup (6 processes)</h4>
+                        <p>Increasing number of processes over time</p>
+                        <ul>
+                            <li>P1: Arrival=0, Burst=10</li>
+                            <li>P2: Arrival=1, Burst=9</li>
+                            <li>P3: Arrival=3, Burst=8</li>
+                            <li>P4: Arrival=6, Burst=7</li>
+                            <li>P5: Arrival=10, Burst=6</li>
+                            <li>P6: Arrival=15, Burst=5</li>
+                        </ul>
+                    </div>
+
+                    <div class="preset-option" onclick="selectPreset(8)">
+                        <h4>8. Priority Test (5 processes)</h4>
+                        <p>Long vs. short jobs arriving together</p>
+                        <ul>
+                            <li>P1: Arrival=0, Burst=5</li>
+                            <li>P2: Arrival=0, Burst=50</li>
+                            <li>P3: Arrival=1, Burst=10</li>
+                            <li>P4: Arrival=2, Burst=40</li>
+                            <li>P5: Arrival=3, Burst=3</li>
+                        </ul>
+                    </div>
                 </div>
                 
                 <p style="margin-top: 15px;"><strong>Note:</strong> This will replace all existing processes.</p>
+                <p><strong>Tip:</strong> Choose from 8 different preset process sets (1-8) to test various scheduling scenarios.</p>
             </div>
             
             <div style="text-align: center; margin-top: 20px;">

@@ -63,7 +63,6 @@ public:
     void incrementWaitTime() { waitTime++; }
     void calculateMetrics(int currentTime);
     void resetToHighestPriority();
-    void reset();  // Reset process to initial state
     
     // Display
     string toString() const;

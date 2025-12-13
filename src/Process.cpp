@@ -51,21 +51,6 @@ void Process::resetToHighestPriority()
     priority = 0;
 }
 
-void Process::reset() 
-{
-    // Reset all runtime state to initial values
-    priority = 0;
-    remainingTime = burstTime;
-    cpuTimeUsed = 0;
-    lastRunTime = 0;
-    queueEnterTime = 0;
-    waitTime = 0;
-    turnaroundTime = 0;
-    responseTime = -1;
-    completionTime = 0;
-    firstRun = true;
-    state = ProcessState::NEW;
-}
 
 string Process::toString() const 
 {

@@ -29,6 +29,12 @@ void FLTKVisualizer::quitCallback(Fl_Widget* /*widget*/, void* data)
     viz->handleQuit();
 }
 
+void FLTKVisualizer::speedCallback(Fl_Widget* /*widget*/, void* data)
+{
+    FLTKVisualizer* viz = static_cast<FLTKVisualizer*>(data);
+    viz->handleSpeed();
+}
+
 FLTKVisualizer::FLTKVisualizer(MLFQScheduler& sched)
     : Fl_Window(700, 750, "MLFQ Scheduler Visualization"), scheduler(sched)
     {
@@ -167,6 +173,7 @@ FLTKVisualizer::FLTKVisualizer(MLFQScheduler& sched)
     speedCounter->value(1.0);
     speedCounter->step(0.1);
     speedCounter->lstep(0.5);
+    speedCounter->callback(speedCallback, this);
 
     this->end();
     this->resizable(this);
@@ -457,4 +464,12 @@ void FLTKVisualizer::restoreInitialProcesses()
 void FLTKVisualizer::handleQuit() 
 {
     this->hide();
+}
+
+void FLTKVisualizer::handleSpeed()
+{
+    // The speed value is already stored in the counter and used in the auto mode
+    // This handler can be used to store the value or perform other operations
+    // For now, we just update the display to reflect the change
+    updateDisplay();
 }

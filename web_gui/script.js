@@ -2,9 +2,24 @@ class MLFQWebInterface {
     constructor() {
         this.isRunning = false;
         this.intervalId = null;
+        this.updateIntervalId = null;
         this.initializeEventListeners();
         this.updateDisplay();
-        setInterval(() => this.updateDisplay(), 500);
+        this.startAutoUpdate();
+    }
+
+    startAutoUpdate() {
+        if (this.updateIntervalId) {
+            clearInterval(this.updateIntervalId);
+        }
+        this.updateIntervalId = setInterval(() => this.updateDisplay(), 500);
+    }
+
+    stopAutoUpdate() {
+        if (this.updateIntervalId) {
+            clearInterval(this.updateIntervalId);
+            this.updateIntervalId = null;
+        }
     }
 
     initializeEventListeners() {
@@ -92,18 +107,23 @@ class MLFQWebInterface {
         try {
             const response = await fetch('/api/processes');
             const data = await response.json();
-            
+
             const tbody = document.getElementById('process-table-body');
             tbody.innerHTML = '';
-            
+
             data.processes.forEach(process => {
                 const row = tbody.insertRow();
+                // Add special class for running process
+                const isRunning = process.pid === data.currentRunningPid;
+                const rowClass = isRunning ? 'running-process-table-row' : '';
+
+                row.className = rowClass;
                 row.innerHTML = `
                     <td>P${process.pid}</td>
                     <td>${process.arrival}</td>
                     <td>${process.burst}</td>
                     <td>${process.remaining}</td>
-                    <td>Q${process.queue}</td>
+                    <td>${process.completion === 0 ? '-' : process.completion}</td>
                     <td><span class="status-${process.status.toLowerCase()}">${process.status}</span></td>
                 `;
             });
@@ -143,7 +163,7 @@ class MLFQWebInterface {
                     .filter(process => process && (process.status === 'Ready' || process.status === 'Running'));
 
                 const processItems = queueProcesses.length > 0
-                    ? queueProcesses.map(p => `<span class="process-item">P${p.pid}</span>`).join('')
+                    ? queueProcesses.map(p => `<span class="process-item ${p.pid === processesData.currentRunningPid ? 'running-process' : ''}">P${p.pid}</span>`).join('')
                     : '<span class="empty-queue">Empty</span>';
 
                 queueDiv.innerHTML = `
@@ -193,10 +213,9 @@ class MLFQWebInterface {
         this.pauseSimulation();
         try {
             await fetch('/api/reset', { method: 'POST' });
-            // Re-enable buttons after reset
-            document.getElementById('step-btn').disabled = false;
-            document.getElementById('start-btn').disabled = false;
-            this.updateDisplay();
+            // After reset, there are no processes, so buttons should be disabled
+            // The interval update will handle this, but let's update once to be sure
+            await this.updateDisplay();
         } catch (e) {
             console.log('Reset failed');
         }
@@ -221,69 +240,103 @@ class MLFQWebInterface {
 
     async loadPresetSet(setNumber) {
         try {
+            // Temporarily stop auto-updates to prevent button state conflicts
+            this.stopAutoUpdate();
+
             // Reset the scheduler first
             await fetch('/api/reset', { method: 'POST' });
-            
+
             // Load the selected preset via API
-            const response = await fetch('/api/preset', { 
+            await fetch('/api/preset', {
                 method: 'POST',
-                headers: {
+                headers:
+                {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
                 body: `set=${setNumber}`
             });
-            
+
             // Re-enable buttons after loading processes
             document.getElementById('step-btn').disabled = false;
             document.getElementById('start-btn').disabled = false;
-            
+
+            // Update display once to show new processes
+            await this.updateDisplay();
+
+            // Resume auto-updates
+            this.startAutoUpdate();
+
             this.closePreset();
-            this.updateDisplay();
         } catch (e) {
             console.log('Load preset failed');
+            // Make sure to restart auto-updates even if there's an error
+            this.startAutoUpdate();
         }
     }
 
     async confirmRandom() {
         try {
+            // Temporarily stop auto-updates to prevent button state conflicts
+            this.stopAutoUpdate();
+
             const count = document.getElementById('random-count').value;
             const maxArrival = document.getElementById('random-max-arrival').value;
             const minBurst = document.getElementById('random-min-burst').value;
             const maxBurst = document.getElementById('random-max-burst').value;
 
-            const response = await fetch('/api/random', {
+            await fetch('/api/random', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                headers: { 'Content-Type': 'application/x-form-urlencoded' },
                 body: `count=${count}&maxArrival=${maxArrival}&minBurst=${minBurst}&maxBurst=${maxBurst}`
             });
 
             // Re-enable buttons after loading processes
             document.getElementById('step-btn').disabled = false;
             document.getElementById('start-btn').disabled = false;
+
+            // Update display once to show new processes
+            await this.updateDisplay();
+
+            // Resume auto-updates
+            this.startAutoUpdate();
+
             this.closeRandom();
-            this.updateDisplay();
         } catch (e) {
             console.log('Load random failed');
+            // Make sure to restart auto-updates even if there's an error
+            this.startAutoUpdate();
         }
     }
 
     async addNewProcess() {
         const arrival = document.getElementById('new-arrival-time').value;
         const burst = document.getElementById('new-burst-time').value;
-        
+
         try {
+            // Temporarily stop auto-updates to prevent button state conflicts
+            this.stopAutoUpdate();
+
             await fetch('/api/add-process', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: `arrival=${arrival}&burst=${burst}`
             });
+
             // Re-enable buttons after adding process
             document.getElementById('step-btn').disabled = false;
             document.getElementById('start-btn').disabled = false;
+
+            // Update display once to show new process
+            await this.updateDisplay();
+
+            // Resume auto-updates
+            this.startAutoUpdate();
+
             this.closeAddProcess();
-            this.updateDisplay();
         } catch (e) {
             console.log('Add process failed');
+            // Make sure to restart auto-updates even if there's an error
+            this.startAutoUpdate();
         }
     }
 

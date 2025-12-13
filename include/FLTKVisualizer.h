@@ -58,6 +58,7 @@ private:
     static void autoCallback(Fl_Widget* widget, void* data);
     static void resetCallback(Fl_Widget* widget, void* data);
     static void quitCallback(Fl_Widget* widget, void* data);
+    static void speedCallback(Fl_Widget* widget, void* data);
 
 public:
     FLTKVisualizer(MLFQScheduler& sched);
@@ -73,6 +74,7 @@ public:
     void handleAuto();
     void handleReset();
     void handleQuit();
+    void handleSpeed();
 };
 
 #endif // FLTK_VISUALIZER_H

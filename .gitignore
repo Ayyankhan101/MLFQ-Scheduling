@@ -57,3 +57,6 @@ core.*
 *.dSYM/
 *.pdb
 logs/
+
+.qwen/
+gha-creds-*.json
