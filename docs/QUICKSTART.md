@@ -160,7 +160,7 @@ A: This is a recent improvement! Instead of just showing "3 processes", you now 
 
 Once you're comfortable with the basics:
 
-1. **Try the algorithm comparison tool** (option 10/11 in the main menu)
+1. **Try the algorithm comparison tool** (option 10/11 in the main menu) - The comparison now respects your current configuration settings (number of queues, boost interval, etc.), making the results relevant to your specific use case!
 2. **Experiment with different queue configurations**
 3. **Create challenging process sets** to test edge cases
 4. **Look at the source code** - it's well-commented and educational

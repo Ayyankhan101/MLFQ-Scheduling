@@ -29,6 +29,7 @@ cd build && ./mlfq_scheduler
 - **🔄 Algorithm Comparison**: Compare Round Robin, SJF, and Priority Scheduling
 - **🎛️ Configurable Parameters**: Adjust quantum times, boost intervals, queue counts
 - **📈 Educational Tools**: Step-by-step execution and detailed explanations
+- **🎯 Consistent Configuration**: All parameters are now applied consistently across all execution modes and algorithm comparisons
 
 ## 🖥️ Interface Options
 

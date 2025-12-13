@@ -95,6 +95,7 @@ The entire system is built around a flexible configuration system:
 - Modify parameters and see immediate effects
 - Save and restore different scheduler configurations
 - Educational presets for different learning scenarios
+- Configuration parameters are now consistently applied across all options, including algorithm comparison tools
 
 ## What I Learned
 

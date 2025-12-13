@@ -35,8 +35,8 @@ struct SchedulerConfig
     // Default constructor with standard MLFQ values
     SchedulerConfig() 
         : numQueues(3),
-          boostInterval(100),
-          baseQuantum(4),
+          boostInterval(20),
+          baseQuantum(2),
           quantumMultiplier(2.0),
           numProcesses(5),
           maxArrivalTime(20),

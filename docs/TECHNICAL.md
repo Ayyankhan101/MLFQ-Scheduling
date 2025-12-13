@@ -1166,6 +1166,37 @@ The JavaScript implementation supports the same three algorithms for the last qu
 - CPU Utilization: (Total burst time / current time) * 100
 - Throughput: Completed processes / current time
 
+## Configuration Consistency Across All Options
+
+### Implementation Changes:
+The system has been enhanced to ensure that user-configured parameters, especially the boost interval and other scheduler settings, are now consistently applied across all execution modes including the algorithm comparison tool:
+
+1. **compareLastQueueAlgorithms() function** now accepts a SchedulerConfig parameter
+2. The function uses the passed configuration instead of hardcoded default values (3 queues, 100ms boost)
+3. All three comparison runs use identical configuration parameters ensuring fair comparisons
+4. The configuration includes all relevant settings: queues count, boost interval, base quantum, quantum multiplier, etc.
+
+### Function Signature Change:
+```cpp
+// Before: Configuration ignored in comparison
+void compareLastQueueAlgorithms();
+
+// After: Uses current configuration for fair comparison
+void compareLastQueueAlgorithms(const SchedulerConfig& config);
+```
+
+### Integration Points:
+- Main menu option 10 (FLTK) / 8 (no FLTK) now passes current config to comparison function
+- All three algorithms (RR, SJF, Priority) run with identical configuration parameters
+- Temporary schedulers in example loading maintain configuration consistency
+- Performance metrics are calculated using the same parameters across all algorithms
+
+### Benefits:
+- Algorithm comparisons now reflect performance under user's specific configuration
+- Results are more relevant to the user's intended use case
+- Configuration changes made via options 5-8 are properly applied in comparisons
+- Consistent behavior across all menu options and execution modes
+
 ## C++-JavaScript Integration
 
 ### Architecture:

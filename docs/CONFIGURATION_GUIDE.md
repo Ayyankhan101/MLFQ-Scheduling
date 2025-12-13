@@ -272,6 +272,35 @@ When running in automatic mode, you can export results to CSV format:
 - Summary statistics
 - Timestamped filename for easy identification
 
+## Configuration Consistency Across All Options
+
+### Consistent Parameter Application
+
+As of the latest updates, all configuration parameters (including priority boost interval) are now consistently applied across all menu options:
+
+1. **Menu Option 10 (Compare Last Queue Algorithms)**: Now respects the current configuration settings including:
+   - Number of queues
+   - Priority boost interval
+   - Base time quantum
+   - Quantum multiplier
+   - This ensures that algorithm comparisons are performed with your currently configured parameters rather than default values
+
+2. **All Other Options**: Configuration parameters are maintained across the session and applied consistently to any new scheduler instances created during execution
+
+### Persistent Configuration Behavior
+
+- When you configure parameters via option 6 or load presets via option 7, those settings remain active for all subsequent operations
+- The "Load example process set with default values" (option 9) sets a global example set that is used across other options, but the scheduling parameters remain as configured
+- The "Compare Last Queue Algorithms" (option 10) now uses your current configuration for fair comparisons
+
+### Best Practices with Configurable Parameters
+
+1. **Set Parameters Before Comparisons**: Configure your desired parameters before running algorithm comparisons to get results relevant to your specific use case
+
+2. **Reset When Needed**: If you want to test with default values, simply restart the application or load a preset configuration
+
+3. **Verify Active Configuration**: Your current configuration is displayed when starting execution modes, allowing you to verify parameters are set as expected
+
 ## Saving Configurations
 
 Currently, configurations are session-based. To reuse a configuration:

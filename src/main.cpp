@@ -35,7 +35,7 @@ void displayMenu();
 void loadExampleProcessSet(MLFQScheduler& scheduler);
 void loadExampleProcessSet(MLFQScheduler& scheduler, int setNumber);
 void displayPresetMenu();
-void compareLastQueueAlgorithms();
+void compareLastQueueAlgorithms(const SchedulerConfig& config);
 void createCustomProcesses(MLFQScheduler& scheduler);
 void generateRandomProcesses(MLFQScheduler& scheduler);
 
@@ -319,7 +319,7 @@ void loadExampleProcessSet(MLFQScheduler& scheduler)
 {
     // Example process set demonstrating MLFQ behavior
     scheduler.addProcess(0, 20);   // P1: arrives at 0, burst 20
-    scheduler.addProcess(5, 12);   // P2: arrives at 5, burst 12
+    scheduler.addProcess(0, 12);   // P2: arrives at 5, burst 12
     scheduler.addProcess(10, 8);   // P3: arrives at 10, burst 8
     scheduler.addProcess(15, 16);  // P4: arrives at 15, burst 16
     scheduler.addProcess(20, 5);   // P5: arrives at 20, burst 5
@@ -354,8 +354,41 @@ void loadExampleProcessSet(MLFQScheduler& scheduler, int setNumber)
             scheduler.addProcess(15, 16);
             scheduler.addProcess(20, 5);
             break;
+        // --- Additional Cases ---
+        case 5: // Mixed Workload: Mix of short and long processes
+            scheduler.addProcess(0, 5);
+            scheduler.addProcess(2, 30);
+            scheduler.addProcess(4, 10);
+            scheduler.addProcess(6, 45);
+            scheduler.addProcess(8, 2);
+            break;
+        case 6: // Simultaneous Arrival: All processes arrive at the same time
+            scheduler.addProcess(0, 10);
+            scheduler.addProcess(0, 5);
+            scheduler.addProcess(0, 20);
+            scheduler.addProcess(0, 3);
+            scheduler.addProcess(0, 15);
+            break;
+        case 7: // Gradual Buildup: Increasing number of processes over time
+            scheduler.addProcess(0, 10);
+            scheduler.addProcess(1, 9);
+            scheduler.addProcess(3, 8);
+            scheduler.addProcess(6, 7);
+            scheduler.addProcess(10, 6);
+            scheduler.addProcess(15, 5);
+            break;
+        case 8: // Priority Test: Processes with clear priority distinctions (MLFQS usually handles this via feedback)
+            // Assuming MLFQS handles priority implicitly; here we use arrival/burst times to influence the scheduler's behavior
+            scheduler.addProcess(0, 5);  // High potential priority (short)
+            scheduler.addProcess(0, 50); // Low potential priority (long)
+            scheduler.addProcess(1, 10);
+            scheduler.addProcess(2, 40);
+            scheduler.addProcess(3, 3);
+            break;
         default:
+            // Assuming an overloaded function loadExampleProcessSet() exists for the default case
             loadExampleProcessSet(scheduler);
+            break;
     }
 }
 
@@ -462,10 +495,42 @@ void displayExampleSetsMenu()
     cout << endl;
     cout << " 4. Default Set: Same as Standard Set (fallback)" << endl;
     cout << endl;
-    cout << " 5. Skip - Use currently configured values" << endl;
+    // --- Additional Cases Menu Items ---
+    cout << " 5. Mixed Workload: Mix of short and long processes" << endl;
+    cout << "    • P1: Arr=0, Burst=5" << endl;
+    cout << "    • P2: Arr=2, Burst=30" << endl;
+    cout << "    • P3: Arr=4, Burst=10" << endl;
+    cout << "    • P4: Arr=6, Burst=45" << endl;
+    cout << "    • P5: Arr=8, Burst=2" << endl;
+    cout << endl;
+    cout << " 6. Simultaneous Arrival: All processes arrive at the same time" << endl;
+    cout << "    • P1: Arr=0, Burst=10" << endl;
+    cout << "    • P2: Arr=0, Burst=5" << endl;
+    cout << "    • P3: Arr=0, Burst=20" << endl;
+    cout << "    • P4: Arr=0, Burst=3" << endl;
+    cout << "    • P5: Arr=0, Burst=15" << endl;
+    cout << endl;
+    cout << " 7. Gradual Buildup: Increasing number of processes over time" << endl;
+    cout << "    • P1: Arr=0, Burst=10" << endl;
+    cout << "    • P2: Arr=1, Burst=9" << endl;
+    cout << "    • P3: Arr=3, Burst=8" << endl;
+    cout << "    • P4: Arr=6, Burst=7" << endl;
+    cout << "    • P5: Arr=10, Burst=6" << endl;
+    cout << "    • P6: Arr=15, Burst=5" << endl;
+    cout << endl;
+    cout << " 8. Priority Test: Long vs. short jobs arriving together" << endl;
+    cout << "    • P1: Arr=0, Burst=5" << endl;  // Short job
+    cout << "    • P2: Arr=0, Burst=50" << endl; // Long job
+    cout << "    • P3: Arr=1, Burst=10" << endl;
+    cout << "    • P4: Arr=2, Burst=40" << endl;
+    cout << "    • P5: Arr=3, Burst=3" << endl;
+    cout << endl;
+    // --- End of Additional Cases Menu Items ---
+    cout << " 9. Skip - Use currently configured values" << endl;
 
-    cout << endl << "Select example set [1-5]: ";
+    cout << endl << "Select example set [1-9]: ";
 }
+
 
 void displayPresetMenu()
 {
@@ -488,7 +553,7 @@ void displayPresetMenu()
     cout << endl << "Select preset [1-5]: ";
 }
 
-void compareLastQueueAlgorithms()
+void compareLastQueueAlgorithms(const SchedulerConfig& config)
 {
     cout << "\n" << TerminalUI::Style::header("=== Last Queue Algorithm Comparison ===") << "\n";
     
@@ -516,10 +581,10 @@ void compareLastQueueAlgorithms()
         case 2:
             displayExampleSetsMenu();
             int exampleChoice;
-            while(!(cin >> exampleChoice) || exampleChoice < 1 || exampleChoice > 5) {
+            while(!(cin >> exampleChoice) || exampleChoice < 1 || exampleChoice > 9) {
                 cin.clear();
                 cin.ignore(10000, '\n');
-                cout << "Invalid! Enter choice (1-5): ";
+                cout << "Invalid! Enter choice (1-9): ";
             }
             cin.ignore();
             // Create temporary scheduler to load example set
@@ -599,8 +664,8 @@ void compareLastQueueAlgorithms()
     
     for (int i = 0; i < 3; i++) {
         cout << "Testing " << algoNames[i] << "...\n";
-        
-        MLFQScheduler scheduler(3, 100);
+
+        MLFQScheduler scheduler(config);
         scheduler.setLastQueueAlgorithm(algos[i]);
         
         for (const auto& p : processes) {
@@ -647,10 +712,42 @@ void compareLastQueueAlgorithms()
     auto minWait = min_element(results.begin(), results.end(),
         [](const auto& a, const auto& b) { return a.avgWait < b.avgWait; });
     cout << "  Lowest Avg Wait: " << minWait->name << " (" << minWait->avgWait << " ms)\n";
-    
+
     auto minTAT = min_element(results.begin(), results.end(),
         [](const auto& a, const auto& b) { return a.avgTurnaround < b.avgTurnaround; });
     cout << "  Lowest Avg TAT:  " << minTAT->name << " (" << minTAT->avgTurnaround << " ms)\n";
+
+    auto minResponse = min_element(results.begin(), results.end(),
+        [](const auto& a, const auto& b) { return a.avgResponse < b.avgResponse; });
+    cout << "  Lowest Avg Resp: " << minResponse->name << " (" << minResponse->avgResponse << " ms)\n";
+
+    // Determine overall champion based on number of metrics won
+    int rr_wins = 0, sjf_wins = 0, ps_wins = 0;
+    if (minWait->name == "Round Robin") rr_wins++;
+    else if (minWait->name == "Shortest Job First") sjf_wins++;
+    else ps_wins++;
+
+    if (minTAT->name == "Round Robin") rr_wins++;
+    else if (minTAT->name == "Shortest Job First") sjf_wins++;
+    else ps_wins++;
+
+    if (minResponse->name == "Round Robin") rr_wins++;
+    else if (minResponse->name == "Shortest Job First") sjf_wins++;
+    else ps_wins++;
+
+    // Find the algorithm with the most wins
+    string overallChampion = "Round Robin";
+    int maxWins = rr_wins;
+    if (sjf_wins > maxWins) {
+        overallChampion = "Shortest Job First";
+        maxWins = sjf_wins;
+    }
+    if (ps_wins > maxWins) {
+        overallChampion = "Priority Scheduling";
+        maxWins = ps_wins;
+    }
+
+    cout << "  Overall Champion: " << overallChampion << " (won " << maxWins << " of 3 metrics)\n";
     
     cout << "\nPress Enter to continue...";
     cin.get();
@@ -854,7 +951,7 @@ int main()
         }
         else if (choice == 10)  // Compare Last Queue Algorithms
         {
-            compareLastQueueAlgorithms();
+            compareLastQueueAlgorithms(config);
             continue;
         }
         else if (choice == 11)  // Exit
@@ -932,7 +1029,7 @@ int main()
         }
         else if (choice == 8)  // Compare Last Queue Algorithms
         {
-            compareLastQueueAlgorithms();
+            compareLastQueueAlgorithms(config);
             continue;
         }
         else if (choice == 9)  // Exit
