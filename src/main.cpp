@@ -7,14 +7,12 @@
 #include <fstream>
 #include <thread>
 #include <chrono>
-#include <memory>  // For smart pointers
+#include <memory>
 #include <random>
 #include <iomanip>
 #include <algorithm>
 #include <ctime>
 #include <limits>
-#include <thread>
-#include <chrono>
 
 #ifdef FLTK_AVAILABLE
 #include "FLTKVisualizer.h"
@@ -123,33 +121,7 @@ void runAutoMode(MLFQScheduler& scheduler, Visualizer& viz)
     }
 }
 
-void runQuickMode(MLFQScheduler& scheduler, Visualizer& viz)
-{
-    cout << "\n" << TerminalUI::Style::warning("=== Quick Run Mode ===") << "\n";
-    cout << "Running simulation without animation...\n\n";
 
-    auto startTime = chrono::high_resolution_clock::now();
-
-    while (!scheduler.isComplete())
-    {
-        scheduler.step();
-    }
-
-    auto endTime = chrono::high_resolution_clock::now();
-    auto duration = chrono::duration_cast<chrono::milliseconds>(endTime - startTime);
-
-    // Show results
-    TerminalUI::clearScreen();
-    viz.displayProcessTable();
-    viz.displayStats();
-    viz.displayGanttChart();
-
-    cout << "\n" << TerminalUI::Style::success("Execution Time: " + to_string(duration.count()) + " ms (real time)") << "\n";
-    cout << "\n" << TerminalUI::Style::success("=== Quick Run Complete ===") << "\n";
-
-    cout << "\nPress Enter to continue...";
-    cin.get();
-}
 
 void saveResultsToCSV(MLFQScheduler& scheduler)
 {
@@ -201,109 +173,7 @@ void saveResultsToCSV(MLFQScheduler& scheduler)
     }
 }
 
-void runComparisonMode()
-{
-    cout << "\n" << TerminalUI::Style::warning("=== Algorithm Comparison Mode ===") << "\n";
-    cout << "Compare Round Robin, SJF, and Priority Scheduling\n\n";
 
-    // Create processes
-    vector<pair<int, int>> processes =
-    {
-        {0, 20}, {5, 12}, {10, 8}, {15, 16}, {20, 5}
-    };
-
-    cout << "Test processes: ";
-    for (size_t i = 0; i < processes.size(); i++)
-    {
-        cout << "P" << (i+1) << "(" << processes[i].first << "," << processes[i].second << ") ";
-    }
-    cout << "\n\n";
-
-    struct AlgoResult
-    {
-        string name;
-        double avgWait;
-        double avgTurnaround;
-        double avgResponse;
-        double cpuUtil;
-        int totalTime;
-    };
-
-    vector<AlgoResult> results;
-
-    // Test each algorithm
-    LastQueueAlgorithm algos[] =
-    {
-        LastQueueAlgorithm::ROUND_ROBIN,
-        LastQueueAlgorithm::SHORTEST_JOB_FIRST,
-        LastQueueAlgorithm::PRIORITY_SCHEDULING
-    };
-
-    string algoNames[] = {"Round Robin", "Shortest Job First", "Priority Scheduling"};
-
-    for (int i = 0; i < 3; i++) 
-    {
-        cout << "Testing " << algoNames[i] << "...\n";
-
-        MLFQScheduler scheduler(3, 100);
-        scheduler.setLastQueueAlgorithm(algos[i]);
-
-        for (const auto& p : processes)
-        {
-            scheduler.addProcess(p.first, p.second);
-        }
-
-        while (!scheduler.isComplete())
-        {
-            scheduler.step();
-        }
-
-        auto stats = scheduler.getStats();
-        results.push_back
-        ({
-            algoNames[i],
-            stats.avgWaitTime,
-            stats.avgTurnaroundTime,
-            stats.avgResponseTime,
-            stats.cpuUtilization,
-            stats.currentTime
-        });
-    }
-
-    // Display comparison table
-    cout << "\n" << TerminalUI::Style::info("═══ COMPARISON RESULTS ═══") << "\n\n";
-    cout << left << setw(20) << "Algorithm"
-              << right << setw(12) << "Avg Wait"
-              << setw(12) << "Avg TAT"
-              << setw(12) << "Avg Resp"
-              << setw(10) << "Time"
-              << setw(10) << "CPU%" << "\n";
-    cout << string(76, '-') << "\n";
-
-    for (const auto& r : results)
-    {
-        cout << left << setw(20) << r.name
-                  << right << fixed << setprecision(2)
-                  << setw(12) << r.avgWait
-                  << setw(12) << r.avgTurnaround
-                  << setw(12) << r.avgResponse
-                  << setw(10) << r.totalTime
-                  << setw(9) << r.cpuUtil << "%" << "\n";
-    }
-
-    // Find best algorithm
-    cout << "\n" << TerminalUI::Style::success("Best Performance:") << "\n";
-    auto minWait = min_element(results.begin(), results.end(),
-        [](const auto& a, const auto& b) { return a.avgWait < b.avgWait; });
-    cout << "  Lowest Avg Wait: " << minWait->name << " (" << minWait->avgWait << " ms)\n";
-
-    auto minTAT = min_element(results.begin(), results.end(),
-        [](const auto& a, const auto& b) { return a.avgTurnaround < b.avgTurnaround; });
-    cout << "  Lowest Avg TAT:  " << minTAT->name << " (" << minTAT->avgTurnaround << " ms)\n";
-
-    cout << "\nPress Enter to continue...";
-    cin.get();
-}
 
 void runGUIMode(MLFQScheduler& scheduler) 
 {

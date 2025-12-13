@@ -65,13 +65,8 @@ All calculations are implemented correctly and validated:
 
 I cross-referenced these against multiple academic sources and validated with comprehensive test cases.
 
-### Dual Implementation Consistency
-One of the most challenging aspects was ensuring the JavaScript web interface produces exactly the same results as the C++ backend. This required:
-- Identical algorithm logic in both languages
-- Careful attention to timing and state management
-- Consistent process scheduling decisions
-- Synchronized performance metric calculations
-- Thorough testing to ensure behavioral equivalence
+### Web Interface as a Frontend
+The web interface is a frontend for the C++ backend. This ensures that the visualization is always in sync with the core C++ scheduler.
 
 ## Features I'm Particularly Proud Of
 

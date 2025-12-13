@@ -46,7 +46,7 @@
                 <div id="queues-container"></div>
                 
                 <div class="boost-status">
-                    <div id="boost-indicator" class="boost-enabled">Priority Boost: ON</div>
+                    <div id="boost-status" class="boost-enabled">Priority Boost: ON</div>
                     <div id="boost-timestamp">Last boost: Time 0</div>
                     <div id="boost-countdown">Next boost in: 20 time units</div>
                 </div>
@@ -100,7 +100,22 @@
                     <input type="range" id="speed-slider" min="1" max="10" value="5">
                     <span id="speed-value">500ms</span>
                 </div>
-                
+
+                <div class="config-row">
+                    <label>Number of Queues:</label>
+                    <input type="number" id="num-queues" value="3" min="2" max="5">
+                </div>
+
+                <div class="config-row">
+                    <label>Base Quantum (ms):</label>
+                    <input type="number" id="base-quantum" value="4" min="1" max="10">
+                </div>
+
+                <div class="config-row">
+                    <label>Quantum Multiplier:</label>
+                    <input type="number" id="quantum-multiplier" value="2.0" min="1.0" max="5.0" step="0.1">
+                </div>
+
                 <div class="config-row">
                     <label>Last Queue Algorithm:</label>
                     <select id="last-queue-algorithm">
@@ -109,12 +124,12 @@
                         <option value="priority">Priority</option>
                     </select>
                 </div>
-                
+
                 <div class="config-row">
                     <label>Priority Boost:</label>
                     <input type="checkbox" id="priority-boost" checked>
                 </div>
-                
+
                 <div class="config-row">
                     <label>Boost Interval:</label>
                     <input type="number" id="boost-interval" value="20" min="1" max="100">

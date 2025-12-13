@@ -130,12 +130,15 @@ shared_ptr<Process> MLFQScheduler::selectNextProcessForLastQueue()
         case LastQueueAlgorithm::PRIORITY_SCHEDULING:
         {
             // Find the highest priority process (longest waiting time)
+            
             auto processes = lastQueue.getProcesses(); // Get a copy to sort
             // Sort by priority (longest waiting time first)
+            
             sort(processes.begin(), processes.end(),
                 [](const shared_ptr<Process>& a, const shared_ptr<Process>& b) 
                 {
                     // Priority = actual wait time (aging for anti-starvation)
+                    
                     return a->getWaitTime() > b->getWaitTime(); // Higher wait time first
                 });
 
@@ -145,7 +148,7 @@ shared_ptr<Process> MLFQScheduler::selectNextProcessForLastQueue()
         }
     }
 
-    // For SJF and Priority Scheduling, remove the selected process to return it
+    // For SJF and Priority Scheduling
     if (selectedProcess)
     {
         lastQueue.removeProcess(selectedProcess->getPid());
@@ -216,13 +219,13 @@ void MLFQScheduler::insertProcessIntoLastQueueByAlgorithm(shared_ptr<Process> pr
         case LastQueueAlgorithm::PRIORITY_SCHEDULING:
         {
             // Find where to insert based on priority (longest waiting time first)
-            int processPriority = currentTime - process->getArrivalTime();
+            // Using the process's wait time attribute
+            int processWaitTime = process->getWaitTime();
             auto insertPos = processes.begin();
-            for (; insertPos != processes.end(); ++insertPos) 
+            for (; insertPos != processes.end(); ++insertPos)
             {
-                int currentPriority = currentTime - (*insertPos)->getArrivalTime();
-                if (currentPriority < processPriority) 
-                {  // Higher priority value comes first
+                if ((*insertPos)->getWaitTime() < processWaitTime)
+                {  // Higher wait time (priority) comes first
                     break;
                 }
             }
@@ -269,19 +272,30 @@ void MLFQScheduler::updateWaitTimes()
     // since we calculate wait time as: turnaroundTime - burstTime
 }
 
-void MLFQScheduler::step() 
+void MLFQScheduler::step()
 {
+    // Don't step if no processes remain
+    if (!hasProcesses()) {
+        currentTime++;
+        return;
+    }
+
     // Check for new arrivals
     checkNewArrivals();
 
     // If no current process, select next one
-    if (!currentProcess || currentProcess->getState() == ProcessState::TERMINATED) 
+    if (!currentProcess || currentProcess->getState() == ProcessState::TERMINATED)
     {
         currentProcess = selectNextProcess();
-        if (!currentProcess) 
+        if (!currentProcess)
         {
             currentTime++;
-            return;  // Idle time - don't count boost timer during idle
+            // Only increment boost timer if boost is enabled and it's not idle time
+            // Actually, we should increment the timer even when idle but check if processes exist
+            if (boostInterval > 0) {
+                boostTimer++;
+            }
+            return;  // Idle time, but still increment boost timer
         }
         // Set queue enter time only when newly selected
         currentProcess->setQueueEnterTime(currentTime);
@@ -304,78 +318,79 @@ void MLFQScheduler::step()
         queueLevel
     });
 
-    // Update time first (before checking completion)
+    // Execute current process and check quantum expiration
+    // Update time after execution
     currentTime++;
 
     // Update wait times for other processes AFTER time increment
     updateWaitTimes();
 
     // Calculate quantum usage and check completion status AFTER execution
-    int timeUsedInQueue = currentTime - currentProcess->getQueueEnterTime();  // This now correctly measures time in queue
+    int timeUsedInQueue = currentTime - currentProcess->getQueueEnterTime();  // Total time spent in this queue
     bool quantumExpired = (timeUsedInQueue >= timeQuantum);
     bool processTerminated = (currentProcess->getState() == ProcessState::TERMINATED);  // This checks status after execution
 
-    // Priority boost check - only increment when CPU is active
-    boostTimer++;
-    if (boostTimer >= boostInterval)
-    {
-        boostAllProcesses();
-        boostTimer = 0;
-        // Current process also gets boosted, so re-enqueue it
-        if (currentProcess && !processTerminated)
+    // Priority boost check - only increment when boost is enabled
+    if (boostInterval > 0) {
+        boostTimer++;
+        if (boostTimer >= boostInterval)
         {
-            currentProcess->resetToHighestPriority();
-            currentProcess->setState(ProcessState::READY);  // Set to READY when boosted
-            currentProcess->setQueueEnterTime(currentTime);
-            readyQueues[0].enqueue(currentProcess);
-            currentProcess = nullptr;
+            boostAllProcesses();
+            boostTimer = 0;
+            // Current process also gets boosted, so re-enqueue it
+            if (currentProcess && !processTerminated)
+            {
+                currentProcess->resetToHighestPriority();
+                currentProcess->setState(ProcessState::READY);  // Set to READY when boosted
+                currentProcess->setQueueEnterTime(currentTime);
+                readyQueues[0].enqueue(currentProcess);
+                currentProcess = nullptr;
+            }
         }
     }
-    else
+
+    // Handle completion or quantum expiration (independent of boost)
+    if (processTerminated)
     {
-        // Handle completion or quantum expiration
-        if (processTerminated)
-        {
-            currentProcess->setCompletionTime(currentTime);
-            currentProcess->calculateMetrics(currentTime);
-            completedProcesses.push_back(currentProcess);
-            currentProcess = nullptr;
-        }
-        else if (quantumExpired)
-        {
-            // Process used up its time quantum
-            moveToNextQueue(currentProcess);
-            currentProcess = nullptr;
-        }
+        currentProcess->setCompletionTime(currentTime);
+        currentProcess->calculateMetrics(currentTime);
+        completedProcesses.push_back(currentProcess);
+        currentProcess = nullptr;
+    }
+    else if (quantumExpired)
+    {
+        // Process used up its time quantum
+        moveToNextQueue(currentProcess);
+        currentProcess = nullptr;
     }
 }
 
-bool MLFQScheduler::hasProcesses() const 
+bool MLFQScheduler::hasProcesses() const
 {
     // Check if there are processes in ready queues
-    for (const auto& queue : readyQueues) 
+    for (const auto& queue : readyQueues)
     {
-        if (!queue.isEmpty()) 
+        if (!queue.isEmpty())
         {
             return true;
         }
     }
-    
+
     // Check if current process is running
-    if (currentProcess && currentProcess->getState() != ProcessState::TERMINATED) 
+    if (currentProcess && currentProcess->getState() != ProcessState::TERMINATED)
     {
         return true;
     }
-    
+
     // Check if there are processes yet to arrive (including at current time)
-    for (const auto& process : allProcesses) 
+    for (const auto& process : allProcesses)
     {
-        if (process->getArrivalTime() >= currentTime && process->getState() != ProcessState::TERMINATED) 
+        if (process->getArrivalTime() <= currentTime && process->getState() != ProcessState::TERMINATED)
         {
             return true;
         }
     }
-    
+
     return false;
 }
 
@@ -456,10 +471,32 @@ void MLFQScheduler::reset()
     }
 }
 
-// Destructor
-MLFQScheduler::~MLFQScheduler() 
+void MLFQScheduler::updateConfig(const SchedulerConfig& newConfig)
 {
-    
+    // Store the new configuration
+    config = newConfig;
+
+    // Update queue-related parameters
+    numQueues = config.numQueues;
+    boostInterval = config.boostInterval;
+
+    // Reset the entire scheduler to use the new configuration
+    // This clears all queues and processes
+    reset();
+
+    // Recreate queues using the new configuration
+    readyQueues.clear();
+    for (int i = 0; i < numQueues; i++)
+    {
+        int quantum = config.getQuantumForQueue(i);
+        readyQueues.emplace_back(i, quantum);
+    }
+}
+
+// Destructor
+MLFQScheduler::~MLFQScheduler()
+{
+
 }
 
 

@@ -254,10 +254,6 @@ button:disabled {
     font-weight: bold;
 }
 
-.boost-disabled {
-    color: #d32f2f;
-    font-weight: bold;
-}
 
 .config-panel {
     background: #f8f9fa;
@@ -317,40 +313,9 @@ input:focus, select:focus {
     padding: 20px;
 }
 
-.loading {
-    display: inline-block;
-    width: 20px;
-    height: 20px;
-    border: 3px solid #f3f3f3;
-    border-top: 3px solid #4CAF50;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
 
-.status-completed {
-    background: #4CAF50;
-    color: white;
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 0.8rem;
-}
 
-.status-running {
-    background: #FF9800;
-    color: white;
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 0.8rem;
-    animation: pulse 1.5s infinite;
-}
 
-.status-ready {
-    background: #2196F3;
-    color: white;
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 0.8rem;
-}
 
 @keyframes spin {
     0% { transform: rotate(0deg); }

@@ -33,7 +33,7 @@ A modern, professional web interface for the Multilevel Feedback Queue (MLFQ) Sc
 - Priority boost information with countdown timer
 
 ### ⚡ Advanced Features
-- Complete JavaScript MLFQ implementation mirroring C++ backend
+- Communication with C++ backend to visualize the MLFQ simulation
 - Process state management (NEW, READY, RUNNING, TERMINATED)
 - Queue-specific time quantum display
 - Real-time priority boost timer with countdown

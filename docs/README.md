@@ -16,7 +16,7 @@ I built three different ways to interact with the scheduler because everyone lea
 
 **Terminal Interface**: This is where I started. It's perfect when you want to step through the algorithm line by line and really understand what's happening. You can pause at any moment, examine the queue states, and see exactly why the scheduler made each decision.
 
-**Web GUI**: This is probably my favorite part. I spent weeks getting the visualization just right. It runs in your browser and shows everything in real-time - processes moving between queues, performance metrics updating live, and even visual indicators for when priority boosts happen.
+**Web GUI**: This is probably my favorite part. It runs in your browser and communicates with the C++ backend to show everything in real-time - processes moving between queues, performance metrics updating live, and even visual indicators for when priority boosts happen.
 
 **FLTK GUI**: A native desktop interface for those who prefer traditional applications. It's fast and responsive, great for running longer simulations.
 
@@ -106,7 +106,7 @@ src/           # Core C++ implementation
 
 web_gui/       # Web interface
 ├── index.html          # Main interface
-├── script.js           # Simulation logic (mirrors C++ behavior)
+├── script.js           # Frontend logic for the web interface
 └── styles.css          # Visual styling
 
 include/       # Header files with clear interfaces

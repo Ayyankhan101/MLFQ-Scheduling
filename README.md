@@ -75,7 +75,7 @@ MLFQ-Scheduling/
 │   └── ...                 # Other headers
 ├── web_gui/                # Web interface
 │   ├── index.html          # Main web interface
-│   ├── script.js           # JavaScript MLFQ implementation
+│   ├── script.js           # JavaScript frontend for the web interface
 │   └── styles.css          # Professional styling
 ├── tests/                  # Unit tests
 │   └── test_scheduler.cpp  # Comprehensive test suite

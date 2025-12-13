@@ -62,10 +62,12 @@ If you see "Build successful!" at the end, you're good to go. If not, check that
 
 ### The Queue Visualization
 Those colored boxes represent your priority queues:
-- **Queue 0 (green)**: Highest priority, quantum = 1
-- **Queue 1 (blue)**: Medium priority, quantum = 2  
-- **Queue 2 (yellow)**: Lower priority, quantum = 4
-- **Queue 3 (red)**: Lowest priority, quantum = 8
+- **Queue 0**: Highest priority
+- **Queue 1**: Medium priority  
+- **Queue 2**: Lower priority
+- **Queue 3**: Lowest priority
+
+(The quantum values are configurable in the application)
 
 Processes move between these queues based on how much CPU time they use. You'll see individual process IDs (P1, P2, etc.) displayed in each queue.
 

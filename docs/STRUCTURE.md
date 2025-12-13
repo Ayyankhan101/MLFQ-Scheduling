@@ -165,7 +165,7 @@ MLFQ-Scheduling/
 - Modern color scheme and typography
 
 **script.js** (~400 lines)
-- Complete JavaScript MLFQ implementation
+- Frontend logic for the web interface
 - Real-time visualization and animations
 - Interactive process management
 - Performance metrics calculation

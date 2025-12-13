@@ -153,6 +153,7 @@ void WebServer::handleClient(int clientSocket) {
                      ",\"avgTurnaroundTime\":" + to_string(stats.avgTurnaroundTime) +
                      ",\"avgResponseTime\":" + to_string(stats.avgResponseTime) +
                      ",\"boostInterval\":" + to_string(scheduler->getBoostInterval()) +
+                     ",\"boostEnabled\":" + (scheduler->getBoostInterval() > 0 ? "true" : "false") +
                      ",\"lastBoostTime\":" + to_string(lastBoostTime) +
                      ",\"nextBoostIn\":" + to_string(scheduler->getNextBoostIn()) + "}";
         
@@ -192,11 +193,22 @@ void WebServer::handleClient(int clientSocket) {
         auto queues = scheduler->getQueues();
         for (size_t i = 0; i < queues.size(); i++) {
             json += "{\"id\":" + to_string(i) +
-                   ",\"size\":" + to_string(queues[i].size()) + "}";
+                   ",\"size\":" + to_string(queues[i].size()) +
+                   ",\"quantum\":" + to_string(queues[i].getTimeQuantum()) +
+                   ",\"processes\":[";
+
+            // Add process IDs in this queue
+            auto queueProcesses = queues[i].getProcesses();
+            for (size_t j = 0; j < queueProcesses.size(); j++) {
+                json += to_string(queueProcesses[j]->getPid());
+                if (j < queueProcesses.size() - 1) json += ",";
+            }
+            json += "]}";
+
             if (i < queues.size() - 1) json += ",";
         }
         json += "]}";
-        
+
         response = "HTTP/1.1 200 OK\r\n";
         response += "Content-Type: application/json\r\n";
         response += "Access-Control-Allow-Origin: *\r\n";
@@ -302,6 +314,98 @@ void WebServer::handleClient(int clientSocket) {
         response += "Content-Type: application/json\r\n";
         response += "Access-Control-Allow-Origin: *\r\n";
         response += "Content-Length: 15\r\n";
+        response += "\r\n";
+        response += "{\"success\":true}";
+    } else if (request.find("POST /api/config") != string::npos) {
+        // Parse POST data for configuration
+        size_t bodyStart = request.find("\r\n\r\n");
+        if (bodyStart != string::npos) {
+            string body = request.substr(bodyStart + 4);
+
+            // Create default config based on current settings
+            SchedulerConfig newConfig = scheduler->getConfig();
+
+            // Parse all configuration parameters
+            size_t pos = 0;
+            string param;
+            bool boostEnabled = true; // Default is enabled
+
+            // Split the body by '&' to get individual parameters
+            stringstream ss(body);
+            string item;
+            while(getline(ss, item, '&')) {
+                size_t eqPos = item.find('=');
+                if (eqPos != string::npos) {
+                    string key = item.substr(0, eqPos);
+                    string value = item.substr(eqPos + 1);
+
+                    if (key == "algorithm") {
+                        if (value == "sjf") {
+                            scheduler->setLastQueueAlgorithm(LastQueueAlgorithm::SHORTEST_JOB_FIRST);
+                            cout << "New last queue algorithm: Shortest Job First" << endl;
+                        } else if (value == "priority") {
+                            scheduler->setLastQueueAlgorithm(LastQueueAlgorithm::PRIORITY_SCHEDULING);
+                            cout << "New last queue algorithm: Priority Scheduling" << endl;
+                        } else {
+                            scheduler->setLastQueueAlgorithm(LastQueueAlgorithm::ROUND_ROBIN);
+                            cout << "New last queue algorithm: Round Robin" << endl;
+                        }
+                    } else if (key == "boost") {
+                        // Handle the boost checkbox - if false, disable boost
+                        if (value == "false") {
+                            boostEnabled = false;
+                        }
+                    } else if (key == "interval") {
+                        try {
+                            newConfig.boostInterval = stoi(value);
+                        } catch (...) {
+                            // Keep default value if conversion fails
+                        }
+                    } else if (key == "numQueues") {
+                        try {
+                            newConfig.numQueues = stoi(value);
+                            // Ensure the value is within valid range
+                            if (newConfig.numQueues < 2) newConfig.numQueues = 2;
+                            if (newConfig.numQueues > 5) newConfig.numQueues = 5;
+                        } catch (...) {
+                            // Keep default value if conversion fails
+                        }
+                    } else if (key == "baseQuantum") {
+                        try {
+                            newConfig.baseQuantum = stoi(value);
+                            // Ensure the value is within valid range
+                            if (newConfig.baseQuantum < 1) newConfig.baseQuantum = 1;
+                            if (newConfig.baseQuantum > 10) newConfig.baseQuantum = 10;
+                        } catch (...) {
+                            // Keep default value if conversion fails
+                        }
+                    } else if (key == "quantumMultiplier") {
+                        try {
+                            newConfig.quantumMultiplier = stod(value);
+                            // Ensure the value is within valid range
+                            if (newConfig.quantumMultiplier < 1.0) newConfig.quantumMultiplier = 1.0;
+                            if (newConfig.quantumMultiplier > 5.0) newConfig.quantumMultiplier = 5.0;
+                        } catch (...) {
+                            // Keep default value if conversion fails
+                        }
+                    }
+                }
+            }
+
+            // Apply the boost setting: if disabled, set interval to -1; otherwise use the interval
+            if (!boostEnabled) {
+                newConfig.boostInterval = -1; // Disable boost
+            }
+            // If boostEnabled is true, interval keeps its value from the "interval" parameter
+
+            // Update the scheduler with the new configuration
+            scheduler->updateConfig(newConfig);
+        }
+
+        response = "HTTP/1.1 200 OK\r\n";
+        response += "Content-Type: application/json\r\n";
+        response += "Access-Control-Allow-Origin: *\r\n";
+        response += "Content-Length: 17\r\n";
         response += "\r\n";
         response += "{\"success\":true}";
     } else {

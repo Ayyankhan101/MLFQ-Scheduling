@@ -57,14 +57,26 @@ class MLFQWebInterface {
             document.getElementById('avg-response-time').textContent = statusData.avgResponseTime.toFixed(1);
             
             // Update boost information
-            if (statusData.boostInterval) {
+            if (statusData.boostEnabled) {
+                document.getElementById('boost-status').textContent = 'Priority Boost: ON';
                 document.getElementById('boost-timestamp').textContent = `Last boost: Time ${statusData.lastBoostTime}`;
                 document.getElementById('boost-countdown').textContent = `Next boost in: ${statusData.nextBoostIn} time units`;
+            } else {
+                document.getElementById('boost-status').textContent = 'Priority Boost: OFF';
+                document.getElementById('boost-timestamp').textContent = '';
+                document.getElementById('boost-countdown').textContent = '';
             }
             
-            // Auto-stop when no processes left
-            if (!statusData.hasProcesses && this.isRunning) {
-                this.pauseSimulation();
+            // Auto-stop when no processes left and disable step button
+            if (!statusData.hasProcesses) {
+                if (this.isRunning) {
+                    this.pauseSimulation();
+                }
+                document.getElementById('step-btn').disabled = true;
+                document.getElementById('start-btn').disabled = true;
+            } else {
+                document.getElementById('step-btn').disabled = false;
+                document.getElementById('start-btn').disabled = false;
             }
             
             // Update process table
@@ -102,33 +114,42 @@ class MLFQWebInterface {
 
     async updateQueues() {
         try {
-            const response = await fetch('/api/queues');
-            const data = await response.json();
-            
-            // Get process details
-            const processResponse = await fetch('/api/processes');
-            const processData = await processResponse.json();
-            
+            // Get both queue and process information
+            const [queuesResponse, processesResponse] = await Promise.all([
+                fetch('/api/queues'),
+                fetch('/api/processes')
+            ]);
+
+            const queuesData = await queuesResponse.json();
+            const processesData = await processesResponse.json();
+
             const container = document.getElementById('queues-container');
             container.innerHTML = '';
-            
-            data.queues.forEach((queue, index) => {
+
+            // Create a map of process PID to process object for quick lookup
+            const processMap = {};
+            processesData.processes.forEach(process => {
+                processMap[process.pid] = process;
+            });
+
+            queuesData.queues.forEach((queue, index) => {
                 const queueDiv = document.createElement('div');
                 queueDiv.className = 'queue';
-                
-                // Get processes in this queue from the API data
-                const queueProcesses = processData.processes.filter(p => 
-                    p.queue === index && (p.status === 'Ready' || p.status === 'Running')
-                );
-                
-                const processItems = queueProcesses.length > 0 
+
+                // Get processes in this queue from the queue API data
+                // Only include processes with Ready or Running status
+                const queueProcesses = queue.processes
+                    .map(pid => processMap[pid])
+                    .filter(process => process && (process.status === 'Ready' || process.status === 'Running'));
+
+                const processItems = queueProcesses.length > 0
                     ? queueProcesses.map(p => `<span class="process-item">P${p.pid}</span>`).join('')
                     : '<span class="empty-queue">Empty</span>';
-                
+
                 queueDiv.innerHTML = `
                     <div class="queue-header">
-                        <span class="queue-name">Queue ${index} ${index === 0 ? '(Highest Priority)' : index === data.queues.length - 1 ? '(Lowest Priority)' : ''}</span>
-                        <span class="queue-quantum">Quantum: ${Math.pow(2, index)}</span>
+                        <span class="queue-name">Queue ${index} ${index === 0 ? '(Highest Priority)' : index === queuesData.queues.length - 1 ? '(Lowest Priority)' : ''}</span>
+                        <span class="queue-quantum">Quantum: ${queue.quantum}</span>
                     </div>
                     <div class="process-list">
                         ${processItems}
@@ -172,6 +193,9 @@ class MLFQWebInterface {
         this.pauseSimulation();
         try {
             await fetch('/api/reset', { method: 'POST' });
+            // Re-enable buttons after reset
+            document.getElementById('step-btn').disabled = false;
+            document.getElementById('start-btn').disabled = false;
             this.updateDisplay();
         } catch (e) {
             console.log('Reset failed');
@@ -218,6 +242,10 @@ class MLFQWebInterface {
                 body: `set=${setNumber}`
             });
             
+            // Re-enable buttons after loading processes
+            document.getElementById('step-btn').disabled = false;
+            document.getElementById('start-btn').disabled = false;
+            
             this.closePreset();
             this.updateDisplay();
         } catch (e) {
@@ -228,6 +256,9 @@ class MLFQWebInterface {
     async confirmRandom() {
         try {
             await fetch('/api/random', { method: 'POST' });
+            // Re-enable buttons after loading processes
+            document.getElementById('step-btn').disabled = false;
+            document.getElementById('start-btn').disabled = false;
             this.closeRandom();
             this.updateDisplay();
         } catch (e) {
@@ -245,6 +276,9 @@ class MLFQWebInterface {
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: `arrival=${arrival}&burst=${burst}`
             });
+            // Re-enable buttons after adding process
+            document.getElementById('step-btn').disabled = false;
+            document.getElementById('start-btn').disabled = false;
             this.closeAddProcess();
             this.updateDisplay();
         } catch (e) {
@@ -271,13 +305,29 @@ class MLFQWebInterface {
         document.getElementById('random-modal').style.display = 'none';
     }
 
-    applyConfig() {
+    async applyConfig() {
         const speed = document.getElementById('speed-slider').value;
         const algorithm = document.getElementById('last-queue-algorithm').value;
         const boost = document.getElementById('priority-boost').checked;
         const interval = document.getElementById('boost-interval').value;
-        
-        console.log('Config applied:', { speed, algorithm, boost, interval });
+        const numQueues = document.getElementById('num-queues').value;
+        const baseQuantum = document.getElementById('base-quantum').value;
+        const quantumMultiplier = document.getElementById('quantum-multiplier').value;
+
+        try {
+            await fetch('/api/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `algorithm=${algorithm}&boost=${boost}&interval=${interval}&speed=${speed}&numQueues=${numQueues}&baseQuantum=${baseQuantum}&quantumMultiplier=${quantumMultiplier}`
+            });
+            console.log('Config applied:', {
+                speed, algorithm, boost, interval,
+                numQueues, baseQuantum, quantumMultiplier
+            });
+        } catch (e) {
+            console.log('Config update failed');
+        }
+
         this.closeConfig();
     }
 }

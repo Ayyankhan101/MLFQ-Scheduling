@@ -61,10 +61,6 @@ public:
     void setLastQueueAlgorithm(LastQueueAlgorithm algorithm);
     LastQueueAlgorithm getLastQueueAlgorithm() const { return lastQueueAlgorithm; }
 
-    // AI-related helper methods
-    void adaptiveParameterUpdate();
-    void recordSchedulingDecision(shared_ptr<Process> process, int decision);
-
 public:
     // Constructors
     MLFQScheduler(int queues = 3, int boost = 100);  // Legacy constructor
@@ -92,6 +88,7 @@ public:
     int getBoostTimer() const { return boostTimer; }
     int getBoostInterval() const { return boostInterval; }
     int getNextBoostIn() const { return boostInterval - boostTimer; }
+    void setBoostInterval(int interval) { boostInterval = interval; }
 
     // Statistics
     SchedulerStats getStats() const;
@@ -104,6 +101,9 @@ public:
 
     // Get configuration
     const SchedulerConfig& getConfig() const { return config; }
+
+    // Update configuration - note: this resets the scheduler with new parameters
+    void updateConfig(const SchedulerConfig& newConfig);
 
 
 };
