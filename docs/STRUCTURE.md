@@ -23,7 +23,7 @@ MLFQ-Scheduling/
 │
 ├── web_gui/                      # Web interface
 │   ├── index.html                # Main HTML structure (~350 lines)
-│   ├── styles.css                # Professional styling (~250 lines)
+│   ├── styles.css                # Professional styling with modern design (~300 lines)
 │   ├── script.js                 # Interactive functionality (~400 lines)
 │   └── README.md                 # Web GUI documentation
 │
@@ -158,11 +158,14 @@ MLFQ-Scheduling/
 - Interactive controls and modals
 - Accessibility features and semantic markup
 
-**styles.css** (~250 lines)
-- Professional styling with CSS3
+**styles.css** (~300 lines)
+- Professional styling with CSS3 and modern design principles
+- Enhanced typography with 'Inter' font family
 - Smooth animations and transitions
 - Responsive design for all screen sizes
-- Modern color scheme and typography
+- Modern gradient backgrounds and card-based layout
+- Improved visual hierarchy and information organization
+- Interactive elements with micro-interactions
 
 **script.js** (~400 lines)
 - Frontend logic for the web interface

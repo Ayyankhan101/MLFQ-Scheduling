@@ -107,7 +107,7 @@ src/           # Core C++ implementation
 web_gui/       # Web interface
 ├── index.html          # Main interface
 ├── script.js           # Frontend logic for the web interface
-└── styles.css          # Visual styling
+└── styles.css          # Professional styling with modern design
 
 include/       # Header files with clear interfaces
 docs/          # Documentation (you're reading it!)
