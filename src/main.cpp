@@ -385,6 +385,15 @@ void loadExampleProcessSet(MLFQScheduler& scheduler, int setNumber)
             scheduler.addProcess(2, 40);
             scheduler.addProcess(3, 3);
             break;
+        case 9: // Algorithm Differentiation Set: Designed to show differences between algorithms
+            // This set has very different burst times to differentiate SJF from others
+            // And staggered arrivals to create different waiting scenarios for priority scheduling
+            scheduler.addProcess(0, 50);  // Long process - arrives first
+            scheduler.addProcess(1, 2);   // Very short process - arrives second
+            scheduler.addProcess(5, 30);  // Medium process - arrives later
+            scheduler.addProcess(10, 1);  // Very short process - arrives latest
+            scheduler.addProcess(15, 20); // Medium process - arrives latest
+            break;
         default:
             // Assuming an overloaded function loadExampleProcessSet() exists for the default case
             loadExampleProcessSet(scheduler);
@@ -525,10 +534,17 @@ void displayExampleSetsMenu()
     cout << "    • P4: Arr=2, Burst=40" << endl;
     cout << "    • P5: Arr=3, Burst=3" << endl;
     cout << endl;
+    cout << " 9. Algorithm Differentiation Set: Designed to highlight algorithm differences" << endl;
+    cout << "    • P1: Arr=0, Burst=50 (long process arriving first)" << endl;
+    cout << "    • P2: Arr=1, Burst=2  (short process arriving second)" << endl;
+    cout << "    • P3: Arr=5, Burst=30 (medium process arriving later)" << endl;
+    cout << "    • P4: Arr=10, Burst=1 (very short process arriving latest)" << endl;
+    cout << "    • P5: Arr=15, Burst=20 (medium process arriving latest)" << endl;
+    cout << endl;
     // --- End of Additional Cases Menu Items ---
-    cout << " 9. Skip - Use currently configured values" << endl;
+    cout << "10. Skip - Use currently configured values" << endl;
 
-    cout << endl << "Select example set [1-9]: ";
+    cout << endl << "Select example set [1-10]: ";
 }
 
 
@@ -581,10 +597,10 @@ void compareLastQueueAlgorithms(const SchedulerConfig& config)
         case 2:
             displayExampleSetsMenu();
             int exampleChoice;
-            while(!(cin >> exampleChoice) || exampleChoice < 1 || exampleChoice > 9) {
+            while(!(cin >> exampleChoice) || exampleChoice < 1 || exampleChoice > 10) {
                 cin.clear();
                 cin.ignore(10000, '\n');
-                cout << "Invalid! Enter choice (1-9): ";
+                cout << "Invalid! Enter choice (1-10): ";
             }
             cin.ignore();
             // Create temporary scheduler to load example set

@@ -63,6 +63,7 @@ private:
     void updateWaitTimes();
     shared_ptr<Process> selectNextProcess();
     shared_ptr<Process> selectNextProcessForLastQueue();  // Select based on algorithm
+    double calculatePriorityScore(const shared_ptr<Process>& process, int currentTime); // Calculate comprehensive priority score
 
 public:
     // Algorithm selection methods

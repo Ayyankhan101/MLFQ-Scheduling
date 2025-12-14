@@ -3,6 +3,7 @@
 #include <iostream>
 #include <cmath>
 #include <climits>
+#include <functional> // for std::function, though not used here but added for completeness
 using namespace std;
 
 // Legacy constructor
@@ -144,17 +145,22 @@ shared_ptr<Process> MLFQScheduler::selectNextProcessForLastQueue()
 
         case LastQueueAlgorithm::PRIORITY_SCHEDULING:
         {
-            // Find the highest priority process (longest waiting time)
-            
-            auto processes = lastQueue.getProcesses(); // Get a copy to sort
-            // Sort by priority (longest waiting time first)
-            
+            // Find the highest priority process considering multiple factors including wait time
+            auto processes = lastQueue.getProcesses();
+
+            if (processes.empty()) {
+                selectedProcess = nullptr;
+                break;
+            }
+
+            // Sort by comprehensive priority score (higher score = higher priority)
             sort(processes.begin(), processes.end(),
-                [](const shared_ptr<Process>& a, const shared_ptr<Process>& b) 
+                [this](const shared_ptr<Process>& a, const shared_ptr<Process>& b)
                 {
-                    // Priority = actual wait time (aging for anti-starvation)
-                    
-                    return a->getWaitTime() > b->getWaitTime(); // Higher wait time first
+                    // Calculate priority score based on multiple factors - capture 'this' for member function access
+                    double priorityA = calculatePriorityScore(a, currentTime);
+                    double priorityB = calculatePriorityScore(b, currentTime);
+                    return priorityA > priorityB; // Higher priority score first
                 });
 
             // The first process in the sorted list is the one to execute
@@ -233,14 +239,16 @@ void MLFQScheduler::insertProcessIntoLastQueueByAlgorithm(shared_ptr<Process> pr
         }
         case LastQueueAlgorithm::PRIORITY_SCHEDULING:
         {
-            // Find where to insert based on priority (longest waiting time first)
-            // Using the process's wait time attribute
-            int processWaitTime = process->getWaitTime();
+            // Find where to insert based on comprehensive priority score
+            double processPriority = calculatePriorityScore(process, currentTime);
             auto insertPos = processes.begin();
             for (; insertPos != processes.end(); ++insertPos)
             {
-                if ((*insertPos)->getWaitTime() < processWaitTime)
-                {  // Higher wait time (priority) comes first
+                // Use 'this' to call member function
+                // Insert before processes with lower priority scores
+                // This ensures higher priority processes come first
+                if (this->calculatePriorityScore(*insertPos, currentTime) < processPriority)
+                {
                     break;
                 }
             }
@@ -548,6 +556,26 @@ void MLFQScheduler::updateConfig(const SchedulerConfig& newConfig)
         int quantum = config.getQuantumForQueue(i);
         readyQueues.emplace_back(i, quantum);
     }
+}
+
+// Helper function to calculate comprehensive priority score
+double MLFQScheduler::calculatePriorityScore(const shared_ptr<Process>& process, int currentTime) {
+    if (!process) return 0.0;
+
+    // Aging factor is the primary component - processes that have waited longer get significantly higher priority
+    // This is the main anti-starvation mechanism and distinguishes from SJF
+    int queueEnterTime = process->getQueueEnterTime();
+    int currentWaitTime = currentTime - queueEnterTime;  // Time spent waiting in current queue
+
+    // Use quadratic growth for aging to make it dominate quickly (anti-starvation)
+    double agingFactor = static_cast<double>(currentWaitTime * currentWaitTime) / 10.0;
+
+    // Secondary factor: original arrival time (processes that entered system earliest get slight boost)
+    int originalArrival = process->getArrivalTime();
+    double arrivalFactor = 100.0 / (1.0 + originalArrival); // Earlier arrival = higher priority
+
+    // Calculate comprehensive priority score - aging is the main factor
+    return agingFactor + arrivalFactor;
 }
 
 // Destructor
