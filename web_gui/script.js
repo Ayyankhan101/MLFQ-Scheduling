@@ -80,6 +80,7 @@ class MLFQWebInterface
             document.getElementById('avg-wait-time').textContent = statusData.avgWaitTime.toFixed(1);
             document.getElementById('avg-turnaround-time').textContent = statusData.avgTurnaroundTime.toFixed(1);
             document.getElementById('avg-response-time').textContent = statusData.avgResponseTime.toFixed(1);
+            document.getElementById('throughput').textContent = statusData.throughput.toFixed(2);
             
             // Update boost information
             if (statusData.boostEnabled) {
