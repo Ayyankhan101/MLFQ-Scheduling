@@ -1,5 +1,7 @@
-class MLFQWebInterface {
-    constructor() {
+class MLFQWebInterface 
+{
+    constructor() 
+    {
         this.isRunning = false;
         this.intervalId = null;
         this.updateIntervalId = null;
@@ -8,21 +10,26 @@ class MLFQWebInterface {
         this.startAutoUpdate();
     }
 
-    startAutoUpdate() {
-        if (this.updateIntervalId) {
+    startAutoUpdate() 
+    {
+        if (this.updateIntervalId) 
+        {
             clearInterval(this.updateIntervalId);
         }
         this.updateIntervalId = setInterval(() => this.updateDisplay(), 500);
     }
 
-    stopAutoUpdate() {
-        if (this.updateIntervalId) {
+    stopAutoUpdate() 
+    {
+        if (this.updateIntervalId) 
+        {
             clearInterval(this.updateIntervalId);
             this.updateIntervalId = null;
         }
     }
 
-    initializeEventListeners() {
+    initializeEventListeners() 
+    {
         document.getElementById('start-btn').onclick = () => this.startSimulation();
         document.getElementById('pause-btn').onclick = () => this.pauseSimulation();
         document.getElementById('step-btn').onclick = () => this.stepSimulation();
@@ -33,7 +40,8 @@ class MLFQWebInterface {
         document.getElementById('add-process-btn').onclick = () => this.showAddProcess();
         
         // Close modals when clicking outside
-        document.getElementById('config-modal').onclick = (e) => {
+        document.getElementById('config-modal').onclick = (e) => 
+        {
             if (e.target.id === 'config-modal') this.closeConfig();
         };
         document.getElementById('add-process-modal').onclick = (e) => {
@@ -47,8 +55,10 @@ class MLFQWebInterface {
         };
         
         // ESC key to close modals
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
+        document.addEventListener('keydown', (e) => 
+        {
+            if (e.key === 'Escape') 
+            {
                 this.closeConfig();
                 this.closeAddProcess();
                 this.closePreset();
@@ -298,7 +308,8 @@ class MLFQWebInterface {
             const minBurst = document.getElementById('random-min-burst').value;
             const maxBurst = document.getElementById('random-max-burst').value;
 
-            await fetch('/api/random', {
+            await fetch('/api/random',
+            {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-form-urlencoded' },
                 body: `count=${count}&minArrival=${minArrival}&maxArrival=${maxArrival}&minBurst=${minBurst}&maxBurst=${maxBurst}`
