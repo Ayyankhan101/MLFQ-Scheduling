@@ -151,8 +151,11 @@ void WebServer::handleClient(int clientSocket)
     } else if (request.find("GET /api/status") != string::npos) {
         auto stats = scheduler->getStats();
         int lastBoostTime = scheduler->getCurrentTime() - scheduler->getBoostTimer();
-        string json = "{\"time\":" + to_string(stats.currentTime) + 
+        bool processesExist = stats.totalProcesses > 0;  // True if any processes are defined in the system
+        string json = "{\"time\":" + to_string(stats.currentTime) +
                      ",\"hasProcesses\":" + (scheduler->hasProcesses() ? "true" : "false") +
+                     ",\"isComplete\":" + (scheduler->isComplete() ? "true" : "false") +
+                     ",\"processesExist\":" + (processesExist ? "true" : "false") +
                      ",\"completedProcesses\":" + to_string(stats.completedProcesses) +
                      ",\"totalProcesses\":" + to_string(stats.totalProcesses) +
                      ",\"cpuUtilization\":" + to_string(stats.cpuUtilization) +
@@ -329,6 +332,7 @@ void WebServer::handleClient(int clientSocket)
 
         // Set default values
         int count = 5;         // default number of processes
+        int minArrival = 0;    // default min arrival time
         int maxArrival = 10;   // default max arrival time
         int minBurst = 1;      // default min burst time
         int maxBurst = 15;     // default max burst time
@@ -364,20 +368,34 @@ void WebServer::handleClient(int clientSocket)
                             // Keep default value if conversion fails
                         }
                     } 
-                    else if (key == "maxArrival") 
+                    else if (key == "minArrival")
                     {
-                        try 
+                        try
+                        {
+                            minArrival = stoi(value);
+                            // Clamp min arrival to a reasonable range
+                            if (minArrival < 0) minArrival = 0;
+                            if (minArrival > 100) minArrival = 100;
+                        }
+                        catch (...)
+                        {
+                            // Keep default value if conversion fails
+                        }
+                    }
+                    else if (key == "maxArrival")
+                    {
+                        try
                         {
                             maxArrival = stoi(value);
                             // Clamp max arrival to a reasonable range
                             if (maxArrival < 0) maxArrival = 0;
                             if (maxArrival > 100) maxArrival = 100;
-                        } 
-                        catch (...) 
+                        }
+                        catch (...)
                         {
                             // Keep default value if conversion fails
                         }
-                    } 
+                    }
                     else if (key == "minBurst") 
                     {
                         try 
@@ -408,8 +426,16 @@ void WebServer::handleClient(int clientSocket)
             }
         }
 
+        // Validate minArrival <= maxArrival
+        if (minArrival > maxArrival)
+        {
+            int temp = minArrival;
+            minArrival = maxArrival;
+            maxArrival = temp;
+        }
+
         // Validate minBurst <= maxBurst
-        if (minBurst > maxBurst) 
+        if (minBurst > maxBurst)
         {
             int temp = minBurst;
             minBurst = maxBurst;
@@ -418,9 +444,9 @@ void WebServer::handleClient(int clientSocket)
 
         // Add random processes with the user-specified parameters
         srand(time(nullptr));
-        for (int i = 0; i < count; i++) 
+        for (int i = 0; i < count; i++)
         {
-            int arrival = rand() % (maxArrival + 1);  // 0 to maxArrival
+            int arrival = (rand() % (maxArrival - minArrival + 1)) + minArrival;  // minArrival to maxArrival
             int burst = (rand() % (maxBurst - minBurst + 1)) + minBurst;  // minBurst to maxBurst
             scheduler->addProcess(arrival, burst);
         }

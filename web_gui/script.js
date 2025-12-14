@@ -82,16 +82,27 @@ class MLFQWebInterface {
                 document.getElementById('boost-countdown').textContent = '';
             }
             
-            // Auto-stop when no processes left and disable step button
+            // Auto-stop if running when no processes left, but keep buttons enabled
+            // so user can add new processes and then start/step
             if (!statusData.hasProcesses) {
                 if (this.isRunning) {
                     this.pauseSimulation();
                 }
+            }
+
+            // Check if simulation is complete (all processes terminated) to disable buttons appropriately
+            if (statusData.isComplete === true) {
+                // All processes are completed - disable step/start buttons
                 document.getElementById('step-btn').disabled = true;
                 document.getElementById('start-btn').disabled = true;
-            } else {
+            } else if (statusData.processesExist === true) {
+                // Processes exist in the system (even if not yet available) - keep buttons enabled
                 document.getElementById('step-btn').disabled = false;
                 document.getElementById('start-btn').disabled = false;
+            } else {
+                // No processes exist in the system - disable buttons
+                document.getElementById('step-btn').disabled = true;
+                document.getElementById('start-btn').disabled = true;
             }
             
             // Update process table
@@ -213,8 +224,10 @@ class MLFQWebInterface {
         this.pauseSimulation();
         try {
             await fetch('/api/reset', { method: 'POST' });
-            // After reset, there are no processes, so buttons should be disabled
-            // The interval update will handle this, but let's update once to be sure
+            // Wait briefly to ensure the reset is processed on the backend
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            // After reset, update display to reflect the empty state
             await this.updateDisplay();
         } catch (e) {
             console.log('Reset failed');
@@ -280,6 +293,7 @@ class MLFQWebInterface {
             this.stopAutoUpdate();
 
             const count = document.getElementById('random-count').value;
+            const minArrival = document.getElementById('random-min-arrival').value;
             const maxArrival = document.getElementById('random-max-arrival').value;
             const minBurst = document.getElementById('random-min-burst').value;
             const maxBurst = document.getElementById('random-max-burst').value;
@@ -287,7 +301,7 @@ class MLFQWebInterface {
             await fetch('/api/random', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-form-urlencoded' },
-                body: `count=${count}&maxArrival=${maxArrival}&minBurst=${minBurst}&maxBurst=${maxBurst}`
+                body: `count=${count}&minArrival=${minArrival}&maxArrival=${maxArrival}&minBurst=${minBurst}&maxBurst=${maxBurst}`
             });
 
             // Re-enable buttons after loading processes
