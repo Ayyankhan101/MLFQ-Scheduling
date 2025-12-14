@@ -274,19 +274,20 @@ void FLTKVisualizer::updateCurrentProcessDisplay()
     currentProcessBox->redraw();
 }
 
-void FLTKVisualizer::updateStatsDisplay() 
+void FLTKVisualizer::updateStatsDisplay()
 {
     auto stats = scheduler.getStats();
     ostringstream oss;
-    
+
     oss << "Statistics Summary:\n"
         << "  Time: " << stats.currentTime << " ms    "
         << "Processes: " << stats.completedProcesses << "/" << stats.totalProcesses << "\n"
         << "  Avg Wait: " << fixed << setprecision(1) << stats.avgWaitTime << " ms  "
         << "Avg Turnaround: " << stats.avgTurnaroundTime << " ms\n"
         << "  Avg Response: " << stats.avgResponseTime << " ms    "
-        << "CPU Util: " << setprecision(1) << stats.cpuUtilization << "%";
-    
+        << "CPU Util: " << setprecision(1) << stats.cpuUtilization << "%\n"
+        << "  Throughput: " << setprecision(2) << stats.throughput << " proc/ms";
+
     statsText = oss.str();
     statsBox->copy_label(statsText.c_str());
     statsBox->redraw();

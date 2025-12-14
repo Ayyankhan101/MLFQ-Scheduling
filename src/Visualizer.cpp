@@ -119,7 +119,7 @@ void Visualizer::displayCurrentProcess() const {
 void Visualizer::displayStats() const {
     auto stats = scheduler.getStats();
     TerminalUI::drawHeader("PERFORMANCE STATISTICS", displayWidth);
-    
+
     vector<pair<string, string>> statsList = {
         {"Current Time", to_string(stats.currentTime) + " ms"},
         {"Total Processes", to_string(stats.totalProcesses)},
@@ -127,11 +127,12 @@ void Visualizer::displayStats() const {
         {"Avg Wait Time", to_string(stats.avgWaitTime).substr(0, 5) + " ms"},
         {"Avg Turnaround Time", to_string(stats.avgTurnaroundTime).substr(0, 5) + " ms"},
         {"Avg Response Time", to_string(stats.avgResponseTime).substr(0, 5) + " ms"},
-        {"CPU Utilization", to_string(stats.cpuUtilization).substr(0, 5) + "%"}
+        {"CPU Utilization", to_string(stats.cpuUtilization).substr(0, 5) + "%"},
+        {"Throughput", to_string(stats.throughput).substr(0, 5) + " proc/ms"}
     };
-    
+
     for (const auto& stat : statsList) {
-        cout << " " << left << setw(30) << stat.first 
+        cout << " " << left << setw(30) << stat.first
                   << ": " << stat.second << endl;
     }
 }

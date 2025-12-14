@@ -8,7 +8,8 @@ using namespace std;
 // Legacy constructor
 MLFQScheduler::MLFQScheduler(int queues, int boost)
     : currentProcess(nullptr), currentTime(0), boostTimer(0), boostInterval(boost), numQueues(queues),
-      pidCounter(1), lastQueueAlgorithm(LastQueueAlgorithm::ROUND_ROBIN) 
+      pidCounter(1), lastQueueAlgorithm(LastQueueAlgorithm::ROUND_ROBIN), throughputInterval(10),
+      firstArrivalTime(0), firstArrivalRecorded(false)
 {
 
     // Create default config
@@ -19,7 +20,7 @@ MLFQScheduler::MLFQScheduler(int queues, int boost)
     // Initialize queues with different time quantums
     int baseQuantum = config.baseQuantum;
 
-    for (int i = 0; i < numQueues; i++) 
+    for (int i = 0; i < numQueues; i++)
     {
         int quantum = static_cast<int>(baseQuantum * pow(config.quantumMultiplier, i));
         readyQueues.emplace_back(i, quantum);
@@ -30,28 +31,42 @@ MLFQScheduler::MLFQScheduler(int queues, int boost)
 MLFQScheduler::MLFQScheduler(const SchedulerConfig& cfg)
     : currentProcess(nullptr), currentTime(0), boostTimer(0),
       boostInterval(cfg.boostInterval), numQueues(cfg.numQueues), pidCounter(1), config(cfg),
-      lastQueueAlgorithm(LastQueueAlgorithm::ROUND_ROBIN) 
+      lastQueueAlgorithm(LastQueueAlgorithm::ROUND_ROBIN), throughputInterval(10),
+      firstArrivalTime(0), firstArrivalRecorded(false)
 {
 
     // Initialize queues using configuration
-    for (int i = 0; i < numQueues; i++) 
+    for (int i = 0; i < numQueues; i++)
     {
         int quantum = config.getQuantumForQueue(i);
         readyQueues.emplace_back(i, quantum);
     }
 }
 
-void MLFQScheduler::addProcess(int arrivalTime, int burstTime) 
+void MLFQScheduler::addProcess(int arrivalTime, int burstTime)
 {
     auto process = make_shared<Process>(pidCounter++, arrivalTime, burstTime);
     allProcesses.push_back(process);
+
+    // Record the first arrival time if not already recorded
+    if (!firstArrivalRecorded || arrivalTime < firstArrivalTime) {
+        firstArrivalTime = arrivalTime;
+        firstArrivalRecorded = true;
+    }
 }
 
-void MLFQScheduler::addProcess(shared_ptr<Process> process) 
+void MLFQScheduler::addProcess(shared_ptr<Process> process)
 {
-    if (process) 
+    if (process)
     {
         allProcesses.push_back(process);
+
+        // Record the first arrival time if not already recorded
+        int arrivalTime = process->getArrivalTime();
+        if (!firstArrivalRecorded || arrivalTime < firstArrivalTime) {
+            firstArrivalTime = arrivalTime;
+            firstArrivalRecorded = true;
+        }
     }
 }
 
@@ -265,11 +280,34 @@ void MLFQScheduler::boostAllProcesses()
     }
 }
 
-void MLFQScheduler::updateWaitTimes() 
+void MLFQScheduler::updateWaitTimes()
 {
     // Wait times are calculated in Process::calculateMetrics()
     // This method is kept for compatibility but doesn't need to do anything
     // since we calculate wait time as: turnaroundTime - burstTime
+}
+
+void MLFQScheduler::updateThroughputMatrix()
+{
+    // Record throughput at regular intervals
+    if (currentTime > 0 && currentTime % throughputInterval == 0) {
+        double currentThroughput;
+        if (completedProcesses.size() > 0) {
+            // Calculate throughput as completed processes / effective processing time
+            if (firstArrivalRecorded && currentTime > firstArrivalTime) {
+                int effectiveTime = currentTime - firstArrivalTime;
+                currentThroughput = static_cast<double>(completedProcesses.size()) / effectiveTime;
+            } else {
+                // Fallback to total simulation time if no first arrival was recorded
+                currentThroughput = static_cast<double>(completedProcesses.size()) / currentTime;
+            }
+        } else {
+            currentThroughput = 0.0;
+        }
+
+        // Store the throughput at this time interval
+        throughputMatrix.push_back({currentTime, currentThroughput});
+    }
 }
 
 void MLFQScheduler::step()
@@ -363,6 +401,9 @@ void MLFQScheduler::step()
         moveToNextQueue(currentProcess);
         currentProcess = nullptr;
     }
+
+    // Update throughput matrix at regular intervals
+    updateThroughputMatrix();
 }
 
 bool MLFQScheduler::hasProcesses() const
@@ -399,22 +440,22 @@ bool MLFQScheduler::isComplete() const
     return completedProcesses.size() == allProcesses.size();
 }
 
-SchedulerStats MLFQScheduler::getStats() const 
+SchedulerStats MLFQScheduler::getStats() const
 {
-    SchedulerStats stats = {0, 0, 0, 0, 0, 0, 0};
+    SchedulerStats stats = {0, 0, 0, 0, 0, 0, 0, 0};
 
     stats.totalProcesses = allProcesses.size();
     stats.completedProcesses = completedProcesses.size();
     stats.currentTime = currentTime;
 
-    if (completedProcesses.empty()) 
+    if (completedProcesses.empty())
     {
         return stats;
     }
 
     int totalWait = 0, totalTurnaround = 0, totalResponse = 0;
 
-    for (const auto& process : completedProcesses) 
+    for (const auto& process : completedProcesses)
     {
         totalWait += process->getWaitTime();
         totalTurnaround += process->getTurnaroundTime();
@@ -445,6 +486,19 @@ SchedulerStats MLFQScheduler::getStats() const
 
         stats.cpuUtilization = (static_cast<double>(totalCpuTimeUsed) / currentTime) * 100.0;
 
+        // Calculate throughput = completed processes / effective processing time
+        // Using the time window from first arrival to current time for more realistic measure
+        // If no processes have been added, use total simulation time
+        if (firstArrivalRecorded && currentTime > firstArrivalTime) {
+            int effectiveTime = currentTime - firstArrivalTime;
+            stats.throughput = static_cast<double>(stats.completedProcesses) / effectiveTime;
+        } else if (currentTime > 0) {
+            // Fallback to total simulation time if no first arrival was recorded
+            stats.throughput = static_cast<double>(stats.completedProcesses) / currentTime;
+        } else {
+            stats.throughput = 0.0;
+        }
+
         // Cap at 100% to avoid display issues
         if (stats.cpuUtilization > 100.0)
         {
@@ -455,7 +509,7 @@ SchedulerStats MLFQScheduler::getStats() const
     return stats;
 }
 
-void MLFQScheduler::reset() 
+void MLFQScheduler::reset()
 {
     currentTime = 0;
     boostTimer = 0;
@@ -463,9 +517,12 @@ void MLFQScheduler::reset()
     currentProcess = nullptr;
     completedProcesses.clear();
     executionLog.clear();
+    throughputMatrix.clear();  // Clear the throughput matrix
     allProcesses.clear();  // Clear all processes
-    
-    for (auto& queue : readyQueues) 
+    firstArrivalTime = 0;
+    firstArrivalRecorded = false;
+
+    for (auto& queue : readyQueues)
     {
         queue.clear();
     }

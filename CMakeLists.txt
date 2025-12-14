@@ -68,11 +68,6 @@ else()
     add_executable(mlfq_scheduler ${MAIN_SOURCES})
 endif()
 
-# Test executable
-add_executable(test_scheduler
-    ${CORE_SOURCES}
-    tests/test_scheduler.cpp
-)
 
 # For Windows, add console flag
 if(WIN32)

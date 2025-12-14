@@ -9,12 +9,13 @@
 #include <map>
 using namespace std;
 
-struct SchedulerStats 
+struct SchedulerStats
 {
     double avgWaitTime;
     double avgTurnaroundTime;
     double avgResponseTime;
     double cpuUtilization;
+    double throughput;  // Processes completed per time unit
     int totalProcesses;
     int completedProcesses;
     int currentTime;
@@ -46,6 +47,14 @@ private:
         int queueLevel;
     };
     vector<ExecutionRecord> executionLog;
+
+    // Throughput matrix tracking - stores throughput at different time intervals
+    vector<pair<int, double>> throughputMatrix; // Pair of (time, throughput_at_that_time)
+    int throughputInterval;  // Time interval at which to record throughput (default 10)
+
+    // Variables to track better throughput calculation
+    int firstArrivalTime;  // Time of the first process arrival
+    bool firstArrivalRecorded;  // Flag to ensure first arrival is recorded only once
 
     // Helper methods
     void moveToNextQueue(shared_ptr<Process> process);
@@ -106,6 +115,12 @@ public:
 
     // Public method to check for newly arriving processes
     void checkNewArrivals();
+
+    // Throughput Matrix methods
+    const vector<pair<int, double>>& getThroughputMatrix() const { return throughputMatrix; }
+    void setThroughputInterval(int interval) { throughputInterval = interval; }
+    int getThroughputInterval() const { return throughputInterval; }
+    void updateThroughputMatrix(); // Update the matrix at regular intervals
 
 
 };

@@ -162,18 +162,19 @@ void WebServer::handleClient(int clientSocket)
                      ",\"avgWaitTime\":" + to_string(stats.avgWaitTime) +
                      ",\"avgTurnaroundTime\":" + to_string(stats.avgTurnaroundTime) +
                      ",\"avgResponseTime\":" + to_string(stats.avgResponseTime) +
+                     ",\"throughput\":" + to_string(stats.throughput) +
                      ",\"boostInterval\":" + to_string(scheduler->getBoostInterval()) +
                      ",\"boostEnabled\":" + (scheduler->getBoostInterval() > 0 ? "true" : "false") +
                      ",\"lastBoostTime\":" + to_string(lastBoostTime) +
                      ",\"nextBoostIn\":" + to_string(scheduler->getNextBoostIn()) + "}";
-        
+
         response = "HTTP/1.1 200 OK\r\n";
         response += "Content-Type: application/json\r\n";
         response += "Access-Control-Allow-Origin: *\r\n";
         response += "Content-Length: " + to_string(json.length()) + "\r\n";
         response += "\r\n";
         response += json;
-    } 
+    }
     else if (request.find("GET /api/processes") != string::npos) 
     {
         string json = "{";
