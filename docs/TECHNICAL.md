@@ -79,18 +79,26 @@ private:
     vector<shared_ptr<Process>> allProcesses;   // All processes
     vector<shared_ptr<Process>> completedProcesses;
     shared_ptr<Process> currentProcess;         // Currently running
-    
+
     int currentTime;                            // System clock
     int boostTimer;                            // Aging timer
     int boostInterval;                         // Boost frequency
     int numQueues;                             // Number of queues
     int pidCounter;                            // Process ID counter
-    
+
     SchedulerConfig config;                    // Configuration
     LastQueueAlgorithm lastQueueAlgorithm;     // Last queue algorithm
-    
+
     vector<ExecutionRecord> executionLog;      // Gantt chart data
-    
+
+    // Throughput matrix tracking - stores throughput at different time intervals
+    vector<pair<int, double>> throughputMatrix; // Pair of (time, throughput_at_that_time)
+    int throughputInterval;  // Time interval at which to record throughput (default 10)
+
+    // Variables to track better throughput calculation
+    int firstArrivalTime;  // Time of the first process arrival
+    bool firstArrivalRecorded;  // Flag to ensure first arrival is recorded only once
+
 public:
     // Constructors
     MLFQScheduler(int queues, int boost);              // Legacy
@@ -110,7 +118,13 @@ public:
     SchedulerStats getStats() const;
     void displayStats() const;
     void exportToCSV(const string& filename) const;
-    
+
+    // Throughput Matrix methods
+    const vector<pair<int, double>>& getThroughputMatrix() const;
+    void setThroughputInterval(int interval);
+    int getThroughputInterval() const;
+    void updateThroughputMatrix();
+
     // State access
     const vector<ProcessQueue>& getQueues() const;
     shared_ptr<Process> getCurrentProcess() const;
@@ -290,6 +304,7 @@ struct SchedulerStats {
     double avgTurnaroundTime;  // Average total time in system
     double avgResponseTime;    // Average time to first CPU access
     double cpuUtilization;     // Percentage of CPU busy time
+    double throughput;         // Processes completed per time unit
     int totalProcesses;        // Total processes handled
     int completedProcesses;    // Processes that finished
     int currentTime;           // Current system time
@@ -335,6 +350,11 @@ void MLFQScheduler::calculateStats() {
 - **Response Time**: Time from arrival to first CPU access
   ```
   Response Time = First CPU Access Time - Arrival Time
+  ```
+
+- **Throughput**: Number of processes completed per time unit
+  ```
+  Throughput = Completed Processes / (Current Time - First Arrival Time)
   ```
 
 - **CPU Utilization**: Percentage of time CPU is busy

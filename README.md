@@ -25,7 +25,7 @@ cd build && ./mlfq_scheduler
 
 - **🎯 Multiple Interfaces**: Terminal, Web GUI, and FLTK GUI
 - **⚡ Real-time Visualization**: Watch processes move between queues
-- **📊 Performance Metrics**: Accurate wait time, turnaround time, CPU utilization
+- **📊 Performance Metrics**: Accurate wait time, turnaround time, CPU utilization, and throughput
 - **🔄 Algorithm Comparison**: Compare Round Robin, SJF, and Priority Scheduling
 - **🎛️ Configurable Parameters**: Adjust quantum times, boost intervals, queue counts
 - **📈 Educational Tools**: Step-by-step execution and detailed explanations
@@ -78,8 +78,7 @@ MLFQ-Scheduling/
 │   ├── index.html          # Main web interface
 │   ├── script.js           # JavaScript frontend for the web interface
 │   └── styles.css          # Professional styling
-├── tests/                  # Unit tests
-│   └── test_scheduler.cpp  # Comprehensive test suite
+├── tests/                  # Unit tests (currently empty after removal)
 ├── docs/                   # Documentation
 │   ├── QUICKSTART.md       # 5-minute setup guide
 │   ├── TECHNICAL.md        # Implementation details
@@ -143,14 +142,9 @@ This project was built to help students understand MLFQ scheduling through:
 
 ## 🧪 Testing
 
-Run the comprehensive test suite:
+Unit tests were previously available but have been removed in recent updates:
 
-```bash
-cd build
-./test_scheduler
-```
-
-Tests cover:
+Tests previously covered:
 - Process creation and management
 - Queue operations
 - Scheduler logic

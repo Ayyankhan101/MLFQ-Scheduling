@@ -161,6 +161,7 @@ Returns current scheduling statistics and system status.
   "avgWaitTime": 4.2,
   "avgTurnaroundTime": 12.5,
   "avgResponseTime": 2.1,
+  "throughput": 0.15,
   "boostInterval": 20,
   "boostEnabled": true,
   "lastBoostTime": 22,

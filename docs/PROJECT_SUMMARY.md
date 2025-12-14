@@ -59,9 +59,10 @@ I spent considerable time ensuring the algorithms are mathematically correct and
 ### Performance Metrics Accuracy
 All calculations are implemented correctly and validated:
 - **Wait Time** = Turnaround Time - Burst Time
-- **Turnaround Time** = Completion Time - Arrival Time  
+- **Turnaround Time** = Completion Time - Arrival Time
 - **Response Time** = First CPU Access - Arrival Time
 - **CPU Utilization** = (Total CPU Time / Total Elapsed Time) × 100
+- **Throughput** = Completed Processes / (Current Time - First Arrival Time)
 
 I cross-referenced these against multiple academic sources and validated with comprehensive test cases.
 
@@ -206,7 +207,7 @@ The architecture makes it relatively straightforward to:
 - ✅ Complete MLFQ algorithm with all standard rules
 - ✅ Three different user interfaces (Terminal, Web, FLTK GUI)
 - ✅ Multiple last-queue algorithms (RR, SJF, Priority)
-- ✅ Comprehensive performance metrics
+- ✅ Comprehensive performance metrics (wait time, turnaround time, response time, CPU utilization, and throughput)
 - ✅ Priority boost mechanism with configurable intervals
 - ✅ Algorithm comparison tools
 - ✅ Flexible process generation and management

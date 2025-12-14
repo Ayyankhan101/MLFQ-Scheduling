@@ -252,6 +252,7 @@ Test 2 (Batch):
    - Average turnaround time
    - CPU utilization
    - Response time
+   - Throughput (processes completed per time unit)
 
 5. **Test different algorithms** - Try algorithm-switching mode to see how different strategies affect the last queue
 

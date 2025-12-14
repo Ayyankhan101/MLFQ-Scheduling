@@ -27,8 +27,7 @@ MLFQ-Scheduling/
 │   ├── script.js                 # Interactive functionality (~400 lines)
 │   └── README.md                 # Web GUI documentation
 │
-├── tests/                        # Unit tests
-│   └── test_scheduler.cpp        # Test suite (~100 lines)
+├── tests/                        # Unit tests (currently empty)
 │
 ├── docs/                         # Documentation
 │   ├── TECHNICAL.md              # Technical documentation
@@ -40,7 +39,6 @@ MLFQ-Scheduling/
 │
 ├── build/                        # Build artifacts (generated)
 │   ├── mlfq_scheduler            # Main executable
-│   ├── test_scheduler            # Test executable
 │   └── CMakeFiles/               # CMake build files
 │
 ├── logs/                         # Log files (generated)
@@ -71,7 +69,8 @@ MLFQ-Scheduling/
 **MLFQScheduler.h** (~120 lines)
 - Core MLFQ scheduler class definition
 - Multiple queue management with different algorithms
-- Statistics tracking and performance metrics
+- Statistics tracking and performance metrics (including throughput calculation)
+- Throughput matrix tracking - stores throughput at different time intervals
 - Last queue algorithm selection (RR, SJF, Priority)
 - Configuration-based constructor support
 
@@ -118,7 +117,8 @@ MLFQ-Scheduling/
 - Multi-queue management with priority levels
 - Time quantum progression (1, 2, 4, 8, ...)
 - Priority boost mechanism (aging prevention)
-- Statistics calculation and performance metrics
+- Statistics calculation and performance metrics (including throughput)
+- Throughput matrix tracking and interval-based updates
 - Support for different last-queue algorithms
 - Configuration-based initialization
 
@@ -209,7 +209,6 @@ main.cpp
 ## Build Outputs
 
 - `mlfq_scheduler` - Main executable (with or without FLTK GUI support)
-- `test_scheduler` - Test executable for unit testing
 - Web assets served directly from `web_gui/` directory
 
 ## Recent Improvements
@@ -229,11 +228,8 @@ main.cpp
 ## Testing Infrastructure
 
 ### Unit Tests (tests/)
-- Process creation and state management
-- Queue operations and round-robin scheduling
-- Scheduler logic and algorithm correctness
-- Performance metric calculations
-- Edge cases and error conditions
+- Currently empty after removal of test_scheduler.cpp
+- Formerly covered: Process creation and state management, Queue operations and round-robin scheduling, Scheduler logic and algorithm correctness, Performance metric calculations, Edge cases and error conditions
 
 ### Integration Testing
 - Web interface consistency with C++ backend
