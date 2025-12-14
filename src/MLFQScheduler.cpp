@@ -563,7 +563,7 @@ double MLFQScheduler::calculatePriorityScore(const shared_ptr<Process>& process,
     if (!process) return 0.0;
 
     // Aging factor is the primary component - processes that have waited longer get significantly higher priority
-    // This is the main anti-starvation mechanism and distinguishes from SJF
+    
     int queueEnterTime = process->getQueueEnterTime();
     int currentWaitTime = currentTime - queueEnterTime;  // Time spent waiting in current queue
 
