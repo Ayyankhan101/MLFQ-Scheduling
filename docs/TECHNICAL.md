@@ -286,13 +286,100 @@ shared_ptr<Process> ProcessQueue::shortestJobFirst() {
 ```cpp
 shared_ptr<Process> ProcessQueue::priorityScheduling() {
     if (isEmpty()) return nullptr;
-    
-    // Calculate dynamic priorities based on wait time
-    // Longer wait time = higher priority (aging)
-    // Implementation details...
+
+    // Algorithm that selects the process with highest priority score
+    // Uses calculatePriorityScore to determine which process should run next
+    shared_ptr<Process> highestPriorityProcess = processes.front();
+    double highestScore = scheduler->calculatePriorityScore(highestPriorityProcess, currentTime);
+
+    for (auto it = processes.begin() + 1; it != processes.end(); ++it) {
+        double currentScore = scheduler->calculatePriorityScore(*it, currentTime);
+        if (currentScore > highestScore) {
+            highestScore = currentScore;
+            highestPriorityProcess = *it;
+        }
+    }
+
+    // Remove and return the highest priority process
+    processes.erase(find(processes.begin(), processes.end(), highestPriorityProcess));
     return highestPriorityProcess;
 }
+
+// When inserting into the last queue with priority scheduling algorithm:
+// The queue maintains processes in priority order using insertion sort
+void ProcessQueue::insertWithPriorityScheduling(shared_ptr<Process> process, int currentTime, MLFQScheduler* scheduler) {
+    // Add process to the end first
+    processes.push_back(process);
+
+    // Then use insertion sort starting from the end to maintain order
+    int n = processes.size();
+    for (int i = n - 1; i > 0; i--) {
+        double currentPriority = scheduler->calculatePriorityScore(processes[i], currentTime);
+        double prevPriority = scheduler->calculatePriorityScore(processes[i-1], currentTime);
+
+        if (currentPriority > prevPriority) { // Higher priority should come first
+            // Swap to move higher priority process earlier in the queue
+            swap(processes[i], processes[i-1]);
+        } else {
+            break; // Proper position found
+        }
+    }
+}
 ```
+
+**Benefits of this approach:**
+
+1. **Efficient Insertion**: The insertion sort approach maintains the priority order incrementally, with O(n) time complexity in the worst case when inserting a process with the highest priority.
+
+2. **Aging Implementation**: This approach effectively implements the aging mechanism by ensuring processes that have waited longer (and thus have higher priority scores due to the quadratic wait time component) are scheduled first.
+
+3. **Anti-Starvation**: By continuously reordering processes based on their priority scores, this implementation prevents starvation of lower-priority processes in the last queue.
+
+#### Priority Score Calculation Function
+
+The `calculatePriorityScore` function is a key component of the priority scheduling system that helps prevent process starvation by implementing an aging mechanism. Here's how it works:
+
+```cpp
+// Helper function to calculate comprehensive priority score
+double MLFQScheduler::calculatePriorityScore(const shared_ptr<Process>& process, int currentTime)
+{
+    if (!process) return 0.0;
+
+    // Aging factor is the primary component - processes that have waited longer get significantly higher priority
+
+    int queueEnterTime = process->getQueueEnterTime();
+    int currentWaitTime = currentTime - queueEnterTime;  // Time spent waiting in current queue
+
+    // Use quadratic growth for aging to make it dominate quickly (anti-starvation)
+    double agingFactor = static_cast<double>(currentWaitTime * currentWaitTime) / 10.0;
+
+    // Secondary factor: original arrival time (processes that entered system earliest get slight boost)
+    int originalArrival = process->getArrivalTime();
+    double arrivalFactor = 100.0 / (1.0 + originalArrival); // Earlier arrival = higher priority
+
+    // Calculate comprehensive priority score - aging is the main factor
+    return agingFactor + arrivalFactor;
+}
+```
+
+**Explanation:**
+
+1. **Input**: The function takes a process object and the current simulation time.
+
+2. **Null Check**: It first checks if the process pointer is valid. If not, it returns 0.0, indicating no priority.
+
+3. **Wait Time Calculation**: It determines how long the process has been waiting in its current queue (`currentWaitTime`).
+
+4. **Aging Factor (Primary)**:
+   * This is the most important part of the score.
+   * It calculates an "aging factor" based on the square of the `currentWaitTime`, divided by 10.0.
+   * This means the longer a process waits in the current queue, the faster its priority increases (due to the square). This helps prevent starvation (a process waiting forever).
+
+5. **Arrival Factor (Secondary)**:
+   * This is a secondary factor based on when the process *originally* arrived in the system (`originalArrival`).
+   * It calculates `100.0 / (1.0 + originalArrival)`. This means processes that arrived earlier in the simulation get a slightly higher priority. The effect is usually smaller than the aging factor.
+
+6. **Final Score**: The function returns the sum of the `agingFactor` and the `arrivalFactor`. The higher the score, the higher the priority this process gets in scheduling decisions.
 
 ## Performance Metrics
 

@@ -237,24 +237,31 @@ void MLFQScheduler::insertProcessIntoLastQueueByAlgorithm(shared_ptr<Process> pr
             processes.insert(insertPos, process);
             break;
         }
-        case LastQueueAlgorithm::PRIORITY_SCHEDULING:
-        {
-            // Find where to insert based on comprehensive priority score
-            double processPriority = calculatePriorityScore(process, currentTime);
-            auto insertPos = processes.begin();
-            for (; insertPos != processes.end(); ++insertPos)
+     case LastQueueAlgorithm::PRIORITY_SCHEDULING:
+   {
+         // Add process to the end first
+         processes.push_back(process);
+         
+         // Then use insertion sort starting from the end to maintain order
+         int n = processes.size();
+
+         for (int i = n - 1; i > 0; i--) 
+         {
+             double currentPriority = calculatePriorityScore(processes[i], currentTime);
+            double prevPriority = calculatePriorityScore(processes[i-1], currentTime);
+            
+            if (currentPriority > prevPriority) 
+            { // Higher priority should come first
+                
+               swap(processes[i], processes[i-1]);
+            } 
+            else 
             {
-                // Use 'this' to call member function
-                // Insert before processes with lower priority scores
-                // This ensures higher priority processes come first
-                if (this->calculatePriorityScore(*insertPos, currentTime) < processPriority)
-                {
-                    break;
-                }
+                break; // Proper position found
             }
-            processes.insert(insertPos, process);
-            break;
         }
+        break;
+    }
         default:
             // Round Robin is handled by regular enqueue
             lastQueue.enqueue(process);
@@ -559,7 +566,8 @@ void MLFQScheduler::updateConfig(const SchedulerConfig& newConfig)
 }
 
 // Helper function to calculate comprehensive priority score
-double MLFQScheduler::calculatePriorityScore(const shared_ptr<Process>& process, int currentTime) {
+double MLFQScheduler::calculatePriorityScore(const shared_ptr<Process>& process, int currentTime)
+ {
     if (!process) return 0.0;
 
     // Aging factor is the primary component - processes that have waited longer get significantly higher priority
