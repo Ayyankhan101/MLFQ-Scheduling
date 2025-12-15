@@ -124,6 +124,12 @@ Watch the boost timer count down in real-time:
 - Perfect for understanding exactly how the algorithm makes decisions
 - Watch processes move between queues with precise timing
 
+### Experiment 6: Export Your Results
+- Run a simulation with your chosen process set
+- When complete (or during), click the "📊 Export CSV" button
+- Download the CSV file containing all process data and scheduler metrics
+- Perfect for analysis in Excel, Google Sheets, or data analysis tools
+
 ## Terminal Interface (For the Curious)
 
 If you want to dig deeper, try the terminal interface:

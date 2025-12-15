@@ -8,6 +8,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <ctime>
+#include <iomanip>
 using namespace std;
 
 WebServer::WebServer(MLFQScheduler* sched, int port) 
@@ -653,8 +654,80 @@ void WebServer::handleClient(int clientSocket)
         response += "Content-Length: 17\r\n";
         response += "\r\n";
         response += "{\"success\":true}";
-    } 
-    else 
+    }
+    else if (request.find("GET /api/export-csv") != string::npos)
+    {
+        // Generate CSV data for all processes with their metrics
+        auto processes = scheduler->getAllProcesses();
+        auto completed = scheduler->getCompletedProcesses();
+
+        // Create a map of PID to completed process for metrics lookup
+        map<int, shared_ptr<Process>> completedMap;
+        for (auto& proc : completed) {
+            completedMap[proc->getPid()] = proc;
+        }
+
+        // Get scheduler statistics
+        auto stats = scheduler->getStats();
+
+        // Build CSV content
+        stringstream csv;
+        csv << "PID,Arrival_Time,Burst_Time,Remaining_Time,Completion_Time,Wait_Time,Turnaround_Time,Response_Time,Status,Queue_Level\n";
+
+        for (auto& process : processes) {
+            int pid = process->getPid();
+            int arrival = process->getArrivalTime();
+            int burst = process->getBurstTime();
+            int remaining = process->getRemainingTime();
+            string status = "Ready";
+
+            int completion = 0;
+            int waitTime = 0;
+            int turnaroundTime = 0;
+            int responseTime = 0;
+            int queueLevel = process->getPriority();
+
+            if (process->getState() == ProcessState::TERMINATED) {
+                status = "Completed";
+                // Use completed process metrics if available
+                if (completedMap.count(pid) > 0) {
+                    auto completedProc = completedMap[pid];
+                    completion = completedProc->getCompletionTime();
+                    waitTime = completedProc->getWaitTime();
+                    turnaroundTime = completedProc->getTurnaroundTime();
+                    responseTime = completedProc->getResponseTime();
+                }
+            } else if (process->getState() == ProcessState::RUNNING) {
+                status = "Running";
+            }
+
+            csv << pid << "," << arrival << "," << burst << "," << remaining << ","
+                << completion << "," << waitTime << "," << turnaroundTime << ","
+                << responseTime << "," << status << "," << queueLevel << "\n";
+        }
+
+        // Add summary statistics at the end of the CSV
+        csv << "\n";
+        csv << "SUMMARY METRICS,,,\n";
+        csv << "Current_Time," << stats.currentTime << "\n";
+        csv << "Total_Processes," << stats.totalProcesses << "\n";
+        csv << "Completed_Processes," << stats.completedProcesses << "\n";
+        csv << "CPU_Utilization," << fixed << setprecision(2) << stats.cpuUtilization << "%\n";
+        csv << "Avg_Wait_Time," << fixed << setprecision(2) << stats.avgWaitTime << "\n";
+        csv << "Avg_Turnaround_Time," << fixed << setprecision(2) << stats.avgTurnaroundTime << "\n";
+        csv << "Avg_Response_Time," << fixed << setprecision(2) << stats.avgResponseTime << "\n";
+        csv << "Throughput," << fixed << setprecision(2) << stats.throughput << "\n";
+
+        string csvContent = csv.str();
+        response = "HTTP/1.1 200 OK\r\n";
+        response += "Content-Type: text/csv\r\n";
+        response += "Content-Disposition: attachment; filename=mlfq_processes.csv\r\n";
+        response += "Access-Control-Allow-Origin: *\r\n";
+        response += "Content-Length: " + to_string(csvContent.length()) + "\r\n";
+        response += "\r\n";
+        response += csvContent;
+    }
+    else
     {
         string content = "404 Not Found";
         response = "HTTP/1.1 404 Not Found\r\n";
@@ -663,6 +736,6 @@ void WebServer::handleClient(int clientSocket)
         response += "\r\n";
         response += content;
     }
-    
+
     send(clientSocket, response.c_str(), response.length(), 0);
 }

@@ -38,9 +38,10 @@ class MLFQWebInterface
         document.getElementById('random-btn').onclick = () => this.showRandom();
         document.getElementById('config-btn').onclick = () => this.showConfig();
         document.getElementById('add-process-btn').onclick = () => this.showAddProcess();
-        
+        document.getElementById('csv-export-btn').onclick = () => this.exportCSV();
+
         // Close modals when clicking outside
-        document.getElementById('config-modal').onclick = (e) => 
+        document.getElementById('config-modal').onclick = (e) =>
         {
             if (e.target.id === 'config-modal') this.closeConfig();
         };
@@ -409,6 +410,50 @@ class MLFQWebInterface
         }
 
         this.closeConfig();
+    }
+
+    async exportCSV() {
+        try {
+            // Show a temporary message to indicate export is in progress
+            const csvBtn = document.getElementById('csv-export-btn');
+            const originalText = csvBtn.innerHTML;
+            csvBtn.innerHTML = '⏳ Exporting...';
+            csvBtn.disabled = true;
+
+            // Fetch CSV data from the server
+            const response = await fetch('/api/export-csv');
+
+            if (response.ok) {
+                const csvData = await response.text();
+
+                // Create a temporary download link
+                const blob = new Blob([csvData], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'mlfq_processes.csv';
+                document.body.appendChild(a);
+                a.click();
+
+                // Clean up the temporary link and object URL
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                console.log('CSV exported successfully');
+            } else {
+                console.error('Failed to export CSV:', response.status);
+                alert('Failed to export CSV data. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error exporting CSV:', error);
+            alert('Error occurred while exporting CSV. Please try again.');
+        } finally {
+            // Restore the original button text
+            const csvBtn = document.getElementById('csv-export-btn');
+            csvBtn.innerHTML = '📊 Export CSV';
+            csvBtn.disabled = false;
+        }
     }
 }
 

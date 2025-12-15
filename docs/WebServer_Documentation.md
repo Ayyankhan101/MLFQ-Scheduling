@@ -207,6 +207,31 @@ Returns information about all MLFQ priority queues.
 }
 ```
 
+#### GET /api/export-csv
+Exports all process information and scheduler metrics in CSV format.
+
+**Response Format (CSV):**
+```
+PID,Arrival_Time,Burst_Time,Remaining_Time,Completion_Time,Wait_Time,Turnaround_Time,Response_Time,Status,Queue_Level
+1,0,20,15,0,0,0,0,Running,0
+2,5,12,12,0,0,0,0,Ready,0
+
+SUMMARY METRICS,,,
+Current_Time,42
+Total_Processes,8
+Completed_Processes,3
+CPU_Utilization,85.70%
+Avg_Wait_Time,4.20
+Avg_Turnaround_Time,12.50
+Avg_Response_Time,2.10
+Throughput,0.15
+```
+
+The CSV includes:
+
+1. **Process Data**: Individual process information including PID, arrival time, burst time, remaining time, completion time, wait time, turnaround time, response time, status, and queue level
+2. **Summary Metrics**: Overall scheduler statistics including current time, total processes, completed processes, CPU utilization percentage, average wait time, average turnaround time, average response time, and throughput
+
 ### POST Endpoints
 
 #### POST /api/step
@@ -310,7 +335,7 @@ The main HTML file that provides the complete user interface structure for the M
 - **Control Panel**: Interactive buttons for controlling the simulation:
   - Start (▶️), Pause (⏸️), Step (⏭️), Reset (🔄) controls
   - Preset Processes (📋) and Random Processes (🎲) buttons
-  - Add Process (➕) and Configuration (⚙️) buttons
+  - Add Process (➕), Configuration (⚙️), and Export CSV (📊) buttons
 - **Status Panel**: Real-time metrics display:
   - Current time, active processes, completed processes, and CPU utilization
 - **Main Content Area**: Two-column layout showing:

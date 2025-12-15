@@ -30,6 +30,7 @@ cd build && ./mlfq_scheduler
 - **🎛️ Configurable Parameters**: Adjust quantum times, boost intervals, queue counts
 - **📈 Educational Tools**: Step-by-step execution and detailed explanations
 - **🎯 Consistent Configuration**: All parameters are now applied consistently across all execution modes and algorithm comparisons
+- **💾 CSV Export**: Export all process data and scheduler metrics to CSV format for analysis
 
 ## 🖥️ Interface Options
 
@@ -41,6 +42,7 @@ Modern, interactive visualization that runs in any browser with:
 - Performance metrics dashboard
 - Multiple preset process sets
 - Step-by-step simulation control
+- **CSV Export**: Download all process data and metrics in CSV format for external analysis
 
 ### Terminal Interface  
 Command-line interface perfect for understanding the algorithm:
