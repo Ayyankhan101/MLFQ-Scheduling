@@ -335,6 +335,46 @@ void ProcessQueue::insertWithPriorityScheduling(shared_ptr<Process> process, int
 
 3. **Anti-Starvation**: By continuously reordering processes based on their priority scores, this implementation prevents starvation of lower-priority processes in the last queue.
 
+#### Code Implementation in MLFQ Scheduler
+
+In the MLFQ scheduler implementation, the insertion sort is used within a switch statement when handling different last queue algorithms:
+
+```cpp
+case LastQueueAlgorithm::PRIORITY_SCHEDULING:
+{
+     // Add process to the end first
+     processes.push_back(process);
+
+     // Then use insertion sort starting from the end to maintain order
+     int n = processes.size();
+
+     for (int i = n - 1; i > 0; i--)
+     {
+         double currentPriority = calculatePriorityScore(processes[i], currentTime);
+        double prevPriority = calculatePriorityScore(processes[i-1], currentTime);
+
+        if (currentPriority > prevPriority)
+        { // Higher priority should come first
+
+           swap(processes[i], processes[i-1]);
+        }
+        else
+        {
+            break; // Proper position found
+        }
+    }
+    break;
+}
+```
+
+**Explanation of the switch case implementation:**
+
+1. **Adding the process**: The new process is appended to the end of the queue
+2. **Getting queue size**: The size is used to determine the starting position for sorting
+3. **Bubble up by priority**: The loop starts from the end and compares adjacent processes
+4. **Swapping**: If a process has higher priority than the one before it, they swap positions
+5. **Breaking**: The loop stops when the process finds its correct position in the priority queue
+
 #### Priority Score Calculation Function
 
 The `calculatePriorityScore` function is a key component of the priority scheduling system that helps prevent process starvation by implementing an aging mechanism. Here's how it works:
